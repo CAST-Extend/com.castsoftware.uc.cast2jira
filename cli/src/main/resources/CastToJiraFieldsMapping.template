@@ -1,0 +1,25 @@
+#Mapping CAST AIP action plan fields to Jira fields.
+#Actually, the mapping is just allowed to the Jira field create by default. Custom fields are not supported
+#Cast field labels
+ObjectFullName.label=on Object
+AddedToActionPlanDate.label=*Added to Action Plan Date :*
+ActionDefined.label=*Action Defined by User :*
+MetricShortDescription.label= 
+MetricLongDescription.label=*Description :*
+Reference.label=*Reference :*
+Reason.label=*Reason :*
+Remediation.label=*Remediation :*
+ViolationExample.label=*Violation Example :*
+RemediationExample.label=*Remediation Example :*
+Total.label=*Total :*
+Output.label=*Output :*
+SourceCode.label:*Violation Source Code :*
+CastId.label=*CastId (Do not Delete or Modified) :*
+TechCriteria.label=*Technical Criteria :* 
+BusinessCriteria.label=*Business Criteria :*
+
+
+
+#Jira fields mapping
+Summary.JiraField=MetricShortDescription.label;ObjectFullName.label
+Description.JiraField=BusinessCriteria.label;TechCriteria.label;MetricLongDescription.label;Reason.label;Reference.label;Remediation.label;ViolationExample.label;RemediationExample.label;SourceCode.label;Total.label;ActionDefined.label;AddedToActionPlanDate.label;Output.label

@@ -1,0 +1,114 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <!--
+    This jelly script is used for per-project configuration.
+
+    See global.jelly for a general discussion about jelly script.
+  -->
+  
+	<f:section title="CAST Database Connection Setup">
+ 	   <f:entry name="useDatabase" title="Select Database:" field="useDatabase">
+		<select name="useDatabase">
+			<j:forEach var="type" items="CSS, Oracle,SQLServer">
+				<f:option selected="${type==instance.getUseDatabase()}" value="${type}">${type}</f:option>
+			</j:forEach>
+		</select>
+		</f:entry>
+		<f:entry title="Database Host:" field="databaseHost">
+		  <f:textbox />
+		</f:entry>
+	    <f:entry title="Database Name:" field="databaseName" default="postgres">
+		  <f:textbox />
+		</f:entry>
+		<f:entry title="Database Port:" field="databasePort">
+		  <f:textbox />
+		</f:entry>
+		
+		<f:entry title="Cast User Name:" field="castUserName">
+		  <f:textbox />
+		</f:entry>
+		<f:entry title="Cast User Password:" field="castUserPassword">
+		  <f:password  />
+		</f:entry>
+		<f:validateButton title="Test CAST Connection" progress="Testing..." method="testDatabaseConnection" with="useDatabase,databaseHost,databaseName,databasePort,castUserName,castUserPassword"/>		
+     </f:section>
+ 
+  
+	<f:section title="Jira Connection Setup">
+	   	<f:entry title="Root URL to Jira REST API:" field="jiraRestApiUrl">
+	  		<f:textbox />
+		</f:entry>
+   	 	<f:entry title="Jira User:" field="jiraUser">
+	  		<f:textbox />
+		</f:entry>
+		<f:entry title="Jira User Password:" field="jiraUserPassword">
+	  		<f:password />
+		</f:entry>
+		  			<f:validateButton title="Test Jira Connection" progress="Testing..." method="testJiraConnection" with="jiraRestApiUrl,jiraUser,jiraUserPassword"/>		
+    </f:section>
+
+	<f:section title="CAST to Jira Linkage">
+		<f:entry title="Project Mapping">
+			<table width="100%">
+			<f:repeatable var="castJiraLinkage" items="${instance.castJiraLinkage}" add="Add Link"  minimum="1">
+		  		<label><b>CAST schema</b></label>
+		  		<f:select field="schemaName" value="${castJiraLinkage.schemaName}"/> 	  		
+		  		<label><b>and Application</b></label>
+		  		<f:select field="appName"  value="${castJiraLinkage.appName}"/> 	  		
+		  		<label><b>Populate the Jira Project</b></label>
+		  		<f:select field="projName" value="${castJiraLinkage.projName}" />		
+		  		<label><b>Using Issue Type</b></label>
+		  		<f:select field="jiraIssueType" value="${castJiraLinkage.jiraIssueType}" />
+		  		<label><b>Component Name</b></label>
+		  		<f:select field="jiraComponentName" value="${castJiraLinkage.jiraComponentName}" />
+				<div align="right">
+					<f:repeatableDeleteButton />
+				</div>
+		  		
+			</f:repeatable>
+			</table>
+		</f:entry>
+  </f:section>
+
+<!--	
+
+	<f:repeatable var="t">
+	   	<f:entry >
+	  		<label><b>CAST Application</b></label>
+	  		<f:textbox field="appName" /> 	  		
+	  		<label><b>Link to Jira Project</b></label>
+	  		<f:textbox field="projName" />
+		</f:entry>
+	</f:repeatable>	
+
+		<f:entry>
+			<f:block>
+				<table width="100%">
+				<th></th><th>Project Name</th>
+				</table>
+				<table width="100%">
+				<th><f:textbox field="projName"/></th><th></th>
+				</table>
+	    	</f:block>
+		</f:entry>	
+-->			
+	
+
+
+    
+	
+	<f:section title="Logging Setup">
+	    <f:entry title="Enable Debug Level:" field="debugEnabled"> 
+	     <f:checkbox/> 
+	    </f:entry>
+   </f:section>
+   
+   <f:section title="Workflow Management">
+ 	   <f:entry name="workFlow" title="Stop the build in case of Errors:" field="workFlow">
+		<select name="workFlow">
+			<j:forEach var="type" items="Yes, No">
+				<f:option selected="${type==instance.getWorkFlow()}" value="${type}">${type}</f:option>
+			</j:forEach>
+		</select>
+	   </f:entry>
+   </f:section>
+</j:jelly>

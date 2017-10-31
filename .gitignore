@@ -1,3 +1,9 @@
+#target folders
+cli/target/
+jenkins/target/
+jenkins/work/
+
+
 # Compiled class file
 *.class
 
