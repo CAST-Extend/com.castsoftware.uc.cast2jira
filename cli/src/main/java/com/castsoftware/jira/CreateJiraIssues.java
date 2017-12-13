@@ -750,11 +750,16 @@ public class CreateJiraIssues
 		} else {
 			if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION)) {
 				result.append(fieldmap.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_CASTID_DESCRIPTION));
+				int maxChar = 30*1024;
+				int maxLength = (result.length() < maxChar)?result.length():maxChar;
+				
+				result.setLength(maxLength);
 				result.append(" ");
 			} else if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION)) {
 				// need to limit to 255 characters
-				int maxChar = 255;
+				int maxChar = 250;
 				int maxLength = (result.length() < maxChar)?result.length():maxChar;
+				
 				result.setLength(maxLength);
 			}
 
