@@ -13,6 +13,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 
@@ -782,8 +784,14 @@ public class CastJiraConnectorBuilder extends Builder // implements
 				@QueryParameter("jiraUser") final String jiraUser,
 				@QueryParameter("jiraUserPassword") final String jiraUserPassword)
 		{
+			Logger log = LogManager.getLogManager().getLogger("hudson.WebAppMain");
+			
+			log.info("Jira Login Validation");
+			
 			List<Project> projects;
 			try {
+				log.info(String.format("User: %s URL: %s", jiraUser,jiraRestApiUrl));
+				
 				BasicCredentials creds = new BasicCredentials(jiraUser, jiraUserPassword);
 				JiraClient jira = new JiraClient(jiraRestApiUrl, creds);
 				projects = jira.getProjects();
@@ -793,8 +801,10 @@ public class CastJiraConnectorBuilder extends Builder // implements
 					return FormValidation.ok("Jira connection OK");
 				}
 			} catch (JiraException ex) {
+				log.info(ex.getMessage());
 				return FormValidation.error("Unable to acces Jira API");
 			} catch (RuntimeException ex) {
+				log.info(ex.getMessage());
 				Throwable cause = ex;
 				while (cause.getCause() != null) {
 					cause = cause.getCause();
