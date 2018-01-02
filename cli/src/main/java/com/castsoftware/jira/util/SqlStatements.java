@@ -123,7 +123,7 @@ public class SqlStatements
 		String rslt = new StringBuffer().append("\n(select dmd").append(typeId).append(".metric_description from ")
 				.append(getSchemaProfile()).append(".dss_metric_descriptions dmd").append(typeId).append(" \n")
 				.append("where dmd").append(typeId).append(".metric_id=dmd.metric_id and dmd").append(typeId)
-				.append(".language = dmd.language AND dmd").append(typeId).append(".description_type_id = 1")
+				.append(".language = dmd.language AND dmd").append(typeId).append(".description_type_id = ").append(typeId)
 				.append(") ").append(name).toString();
 
 		return rslt;
