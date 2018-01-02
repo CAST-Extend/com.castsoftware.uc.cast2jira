@@ -4,7 +4,7 @@
 
 	<groupId>com.castsoftware.jira</groupId>
 	<artifactId>CastJiraConnector</artifactId>
-	<version>1.5.3</version>
+	<version>1.5.4</version>
 	<packaging>jar</packaging>
 
 	<parent>
