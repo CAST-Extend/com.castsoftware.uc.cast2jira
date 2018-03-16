@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.jenkins-ci.plugins</groupId>
-    <artifactId>plugin</artifactId>
-    <version>2.11</version>
-    <relativePath/>
-  </parent>
-  
+	<parent>
+		<groupId>org.jenkins-ci.plugins</groupId>
+		<artifactId>plugin</artifactId>
+		<version>2.11</version>
+		<relativePath />
+	</parent>
+
 	<groupId>com.castsoftware.jenkins.CastToJira</groupId>
 	<artifactId>CastToJiraConnector</artifactId>
 	<version>1.11</version>
@@ -51,7 +51,7 @@
 		<dependency>
 			<groupId>com.castsoftware.jira</groupId>
 			<artifactId>CastJiraConnector</artifactId>
-			<version>1.3</version>
+			<version>1.5.4</version>
 		</dependency>
 		<dependency>
 			<groupId>postgresql</groupId>
@@ -62,7 +62,6 @@
 	<build>
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>
@@ -94,11 +93,13 @@
 					</configuration>
 				</plugin>
 			</plugins>
-		</pluginManagement>		
+		</pluginManagement>
 	</build>
 	<properties>
 		<maven.javadoc.skip>true</maven.javadoc.skip>
 		<maven.test.skip>true</maven.test.skip>
 		<findbugs.skip>true</findbugs.skip>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.7</maven.compiler.target>
 	</properties>
 </project>
