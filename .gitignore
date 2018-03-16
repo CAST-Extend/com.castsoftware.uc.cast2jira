@@ -22,3 +22,5 @@ jenkins/target/test-classes/
 jenkins/work/
 
 client/test
+cast2jira
+/cast2jira.zip
