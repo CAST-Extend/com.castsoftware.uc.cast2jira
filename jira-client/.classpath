@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" output="target/test-classes" path="src/test/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="target/classes" path="src/main/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpclient/4.2.5/httpclient-4.2.5.jar" sourcepath="M2_REPO/org/apache/httpcomponents/httpclient/4.2.5/httpclient-4.2.5-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpcore/4.2.4/httpcore-4.2.4.jar" sourcepath="M2_REPO/org/apache/httpcomponents/httpcore/4.2.4/httpcore-4.2.4-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar" sourcepath="M2_REPO/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/commons-codec/commons-codec/1.6/commons-codec-1.6.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpmime/4.2.5/httpmime-4.2.5.jar" sourcepath="M2_REPO/org/apache/httpcomponents/httpmime/4.2.5/httpmime-4.2.5-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/net/sf/json-lib/json-lib/2.4/json-lib-2.4-jdk15.jar" sourcepath="M2_REPO/net/sf/json-lib/json-lib/2.4/json-lib-2.4-jdk15-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/commons-beanutils/commons-beanutils/1.8.0/commons-beanutils-1.8.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/commons-collections/commons-collections/3.2.1/commons-collections-3.2.1.jar" sourcepath="M2_REPO/commons-collections/commons-collections/3.2.1/commons-collections-3.2.1-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/commons-lang/commons-lang/2.5/commons-lang-2.5.jar"/>
+	<classpathentry kind="var" path="M2_REPO/net/sf/ezmorph/ezmorph/1.0.6/ezmorph-1.0.6.jar" sourcepath="M2_REPO/net/sf/ezmorph/ezmorph/1.0.6/ezmorph-1.0.6-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/joda-time/joda-time/2.3/joda-time-2.3.jar" sourcepath="M2_REPO/joda-time/joda-time/2.3/joda-time-2.3-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/junit/junit/4.8.2/junit-4.8.2.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/powermock/powermock-module-junit4/1.6.3/powermock-module-junit4-1.6.3.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/powermock/powermock-module-junit4-common/1.6.3/powermock-module-junit4-common-1.6.3.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/powermock/powermock-core/1.6.3/powermock-core-1.6.3.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/powermock/powermock-reflect/1.6.3/powermock-reflect-1.6.3.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/objenesis/objenesis/2.1/objenesis-2.1.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/javassist/javassist/3.20.0-GA/javassist-3.20.0-GA.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/powermock/powermock-api-mockito/1.6.3/powermock-api-mockito-1.6.3.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/mockito/mockito-all/1.10.19/mockito-all-1.10.19.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/powermock/powermock-api-support/1.6.3/powermock-api-support-1.6.3.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>

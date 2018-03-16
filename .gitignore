@@ -21,6 +21,10 @@ jenkins/target/maven-status/
 jenkins/target/test-classes/
 jenkins/work/
 
+jira-client/target/maven-status
+jira-client/target/classes
+jira-client/target/test-classes
+jira-client/target/surefire-reports
+
 client/test
 cast2jira
-/cast2jira.zip
