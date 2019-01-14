@@ -81,7 +81,7 @@ public class SqlStatements
 			ViolationCRC crc = new ViolationCRC();
 			String fc = "";
 			while (rs.next()) {
-				ActionPlanViolation mr = new ActionPlanViolation(rs.getLong("object_id"), rs.getInt("priority"),
+				ActionPlanViolation mr = new ActionPlanViolation(rs.getLong("object_id"), rs.getString("tag"), rs.getInt("priority"),
 						rs.getTimestamp("fecha").toString(), rs.getTimestamp("first_snapshot_date").toString(),
 						rs.getString("action_message"), rs.getString("object_name"), rs.getInt("metric_id"),
 						rs.getString("metric"), rs.getString("reason"), rs.getString("desciption"),
@@ -154,7 +154,7 @@ public class SqlStatements
 				.append(") business_criteria	\n").toString();
 
 		String statement = new StringBuffer()
-				.append("SELECT vap.object_id, dmd.metric_id, dmd.metric_description AS metric, dso.object_full_name AS object_name, vap.priority, ")
+				.append("SELECT vap.object_id, dmd.metric_id, dmd.metric_description AS metric, dso.object_full_name AS object_name, vap.tag, vap.priority, ")
 				.append("dvs.snapshot_id, vap.first_snapshot_date, vap.sel_date AS fecha, vap.action_def AS action_message,  dvs.violation_status, ")
 				.append("dsp.line_start,  dsp.line_end, dcs.source_path,  dcs.source_code,")
 				.append(getMetricDescriptionStatement("reason", 1)).append(",")

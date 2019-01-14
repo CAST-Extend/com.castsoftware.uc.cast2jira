@@ -966,7 +966,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
 
 		public boolean isUseResolution()
 		{
-			return useResolution.isNullObject() ? false : true;
+			return useResolution==null ? false : true;
 		}
 
 		public void setUseResolution(JSONObject useResolution)

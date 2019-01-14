@@ -254,7 +254,7 @@ public class CreateJiraIssues
 					}
 				}
 
-				if (priority <= 0 || priority >= 4) {
+				if (priority < 1 || priority > 3) {
 					log.info(String.format("Unprioritized or Low priority issue, NOT added (%d)", temp.getObjectId()));
 					setTotalNumOfUnprioritizedIssues(++totalNumOfUnprioritizedIssues);
 				} else if (sr.total == 0) { // issue was NOT found
