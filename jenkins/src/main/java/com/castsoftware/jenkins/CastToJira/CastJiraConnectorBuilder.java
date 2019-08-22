@@ -79,23 +79,19 @@ public class CastJiraConnectorBuilder extends Builder // implements
 
 	private static String OS = System.getProperty("os.name").toLowerCase();
 
-	public static boolean isWindows()
-	{
+	public static boolean isWindows() {
 		return (OS.indexOf("win") >= 0);
 	}
 
-	public static boolean isMac()
-	{
+	public static boolean isMac() {
 		return (OS.indexOf("mac") >= 0);
 	}
 
-	public static boolean isUnix()
-	{
+	public static boolean isUnix() {
 		return (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0);
 	}
 
-	public static boolean isSolaris()
-	{
+	public static boolean isSolaris() {
 		return (OS.indexOf("sunos") >= 0);
 	}
 
@@ -107,8 +103,8 @@ public class CastJiraConnectorBuilder extends Builder // implements
 	@DataBoundConstructor
 	public CastJiraConnectorBuilder(String useDatabase, String databaseHost, String databasePort, String databaseName,
 			String castUserName, String castUserPassword, String jiraRestApiUrl, String jiraUser,
-			String jiraUserPassword, ArrayList<CastJiraLinkage> castJiraLinkage, boolean debugEnabled, String workFlow)
-	{
+			String jiraUserPassword, ArrayList<CastJiraLinkage> castJiraLinkage, boolean debugEnabled,
+			String workFlow) {
 		this.setDatabaseHost(databaseHost);
 		this.setDatabaseName(databaseName);
 		this.setDatabasePort(databasePort);
@@ -129,12 +125,15 @@ public class CastJiraConnectorBuilder extends Builder // implements
 
 	private boolean processAplication(AbstractBuild build, Launcher launcher, BuildListener listener, String appName,
 			String schemaName, String projName, String jiraIssueType, String jiraComponentName)
-			throws InterruptedException
-	{
+			throws InterruptedException {
 		boolean rslt = true;
 
 		boolean useResolution = this.getDescriptor().isUseResolution();
 		String resolution = this.getDescriptor().getResolution();
+		if (resolution==null||resolution.isEmpty())
+		{
+			useResolution=false;
+		}
 
 		String command = new StringBuffer()
 				.append(" -applicationname \"#APP_NAME#\" -castusername \"#CAST_USER_NAME#\" ")
@@ -148,12 +147,11 @@ public class CastJiraConnectorBuilder extends Builder // implements
 					resolution);
 			command = command + resolutionCommand;
 		}
-		
-		if (jiraComponentName!=null &&  jiraComponentName.length() > 0)
-		{
+
+		if (jiraComponentName != null && jiraComponentName.length() > 0) {
 			command = String.format("%s -component \"%s\"", command, jiraComponentName);
 		}
-		
+
 		String extractorLocation = this.getDescriptor().getJiraExportLoc();
 		if (extractorLocation == null || extractorLocation.isEmpty()) {
 			listener.getLogger().println("Extraction location is empty");
@@ -195,9 +193,9 @@ public class CastJiraConnectorBuilder extends Builder // implements
 
 		} else if (isWindows()) {
 			listener.getLogger().println("Executing Windows Batch");
-			
-			command = String.format("@@echo off\n%s", command);
-			
+
+			command = String.format("@@echo off%n%s", command);
+
 			BatchFile batchFile = new BatchFile(command);
 			rslt = batchFile.perform(build, launcher, listener);
 
@@ -210,8 +208,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
 
 	@SuppressWarnings("rawtypes")
 	@Override
-	public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException
-	{
+	public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException {
 		// This is where you 'build' the project.
 		PrintStream logger = listener.getLogger();
 
@@ -232,12 +229,18 @@ public class CastJiraConnectorBuilder extends Builder // implements
 				getLogDateTime() + "- " + "Logger configuration. Details in Job Console & Jenkins - All System Logs");
 		logger.println(getLogDateTime() + "- " + "Getting Action Plan...");
 
+		String jiraUtilLoc = getDescriptor().getJiraExportLoc();
+		if (jiraUtilLoc == null)
+		{
+			logger.println("ERROR: Jira Export Utility Location is not configured");
+			return false;
+		}
+		
 		for (CastJiraLinkage link : this.castJiraLinkage) {
 			logger.println("Generating Action Plan for " + link.getAppName());
-			String jiraUtilLoc = getDescriptor().getJiraExportLoc();
 
 			processAplication(build, launcher, listener, link.getAppName(), link.getSchemaName(), link.getProjName(),
-					link.getJiraIssueType(),link.getJiraComponentName());
+					link.getJiraIssueType(), link.getJiraComponentName());
 		}
 
 		if (getReturnValue() == 0) {
@@ -254,170 +257,140 @@ public class CastJiraConnectorBuilder extends Builder // implements
 	/**
 	 * @return the castUserName
 	 */
-	public String getCastUserName()
-	{
+	public String getCastUserName() {
 		return castUserName;
 	}
 
 	/**
-	 * @param castUserName
-	 *            the castUserName to set
+	 * @param castUserName the castUserName to set
 	 */
-	public void setCastUserName(String castUserName)
-	{
+	public void setCastUserName(String castUserName) {
 		this.castUserName = castUserName;
 	}
 
 	/**
 	 * @return the castUserPassword
 	 */
-	public String getCastUserPassword()
-	{
+	public String getCastUserPassword() {
 		return castUserPassword;
 	}
 
 	/**
-	 * @param castUserPassword
-	 *            the castUserPassword to set
+	 * @param castUserPassword the castUserPassword to set
 	 */
-	public void setCastUserPassword(String castUserPassword)
-	{
+	public void setCastUserPassword(String castUserPassword) {
 		this.castUserPassword = castUserPassword;
 	}
 
 	/**
 	 * @return the useDatabase
 	 */
-	public String getUseDatabase()
-	{
+	public String getUseDatabase() {
 		return useDatabase == null ? "css" : useDatabase;
 	}
 
 	/**
-	 * @param useDatabase
-	 *            the useDatabase to set
+	 * @param useDatabase the useDatabase to set
 	 */
-	public void setUseDatabase(String useDatabase)
-	{
+	public void setUseDatabase(String useDatabase) {
 		this.useDatabase = useDatabase;
 	}
 
 	/**
 	 * @return the databaseHost
 	 */
-	public String getDatabaseHost()
-	{
+	public String getDatabaseHost() {
 		return databaseHost;
 	}
 
 	/**
-	 * @param databaseHost
-	 *            the databaseHost to set
+	 * @param databaseHost the databaseHost to set
 	 */
-	public void setDatabaseHost(String databaseHost)
-	{
+	public void setDatabaseHost(String databaseHost) {
 		this.databaseHost = databaseHost;
 	}
 
 	/**
 	 * @return the databaseName
 	 */
-	public String getDatabaseName()
-	{
+	public String getDatabaseName() {
 		return databaseName;
 	}
 
 	/**
-	 * @param databaseName
-	 *            the databaseName to set
+	 * @param databaseName the databaseName to set
 	 */
-	public void setDatabaseName(String databaseName)
-	{
+	public void setDatabaseName(String databaseName) {
 		this.databaseName = databaseName;
 	}
 
 	/**
 	 * @return the databasePort
 	 */
-	public String getDatabasePort()
-	{
+	public String getDatabasePort() {
 		return databasePort;
 	}
 
 	/**
-	 * @param databasePort
-	 *            the databasePort to set
+	 * @param databasePort the databasePort to set
 	 */
-	public void setDatabasePort(String databasePort)
-	{
+	public void setDatabasePort(String databasePort) {
 		this.databasePort = databasePort;
 	}
 
 	/**
 	 * @return the jiraRestApiUrl
 	 */
-	public String getJiraRestApiUrl()
-	{
+	public String getJiraRestApiUrl() {
 		return jiraRestApiUrl;
 	}
 
 	/**
-	 * @param jiraRestApiUrl
-	 *            the jiraRestApiUrl to set
+	 * @param jiraRestApiUrl the jiraRestApiUrl to set
 	 */
-	public void setJiraRestApiUrl(String jiraRestApiUrl)
-	{
+	public void setJiraRestApiUrl(String jiraRestApiUrl) {
 		this.jiraRestApiUrl = jiraRestApiUrl;
 	}
 
 	/**
 	 * @return the jiraUser
 	 */
-	public String getJiraUser()
-	{
+	public String getJiraUser() {
 		return jiraUser;
 	}
 
 	/**
-	 * @param jiraUser
-	 *            the jiraUser to set
+	 * @param jiraUser the jiraUser to set
 	 */
-	public void setJiraUser(String jiraUser)
-	{
+	public void setJiraUser(String jiraUser) {
 		this.jiraUser = jiraUser;
 	}
 
 	/**
 	 * @return the jiraUserPassword
 	 */
-	public String getJiraUserPassword()
-	{
+	public String getJiraUserPassword() {
 		return jiraUserPassword;
 	}
 
 	/**
-	 * @param jiraUserPassword
-	 *            the jiraUserPassword to set
+	 * @param jiraUserPassword the jiraUserPassword to set
 	 */
-	public void setJiraUserPassword(String jiraUserPassword)
-	{
+	public void setJiraUserPassword(String jiraUserPassword) {
 		this.jiraUserPassword = jiraUserPassword;
 	}
 
 	/**
 	 * @return the debugEnabled
 	 */
-	public boolean getDebugEnabled()
-	{
+	public boolean getDebugEnabled() {
 		return debugEnabled;
 	}
 
 	/**
-	 * @param debugEnabled
-	 *            the debugEnabled to set
+	 * @param debugEnabled the debugEnabled to set
 	 */
-	public void setDebugEnabled(boolean debugEnabled)
-	{
+	public void setDebugEnabled(boolean debugEnabled) {
 		this.debugEnabled = debugEnabled;
 	}
 
@@ -429,8 +402,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
 	 */
 
 	/**
-	 * @param logPath
-	 *            the logPath to set
+	 * @param logPath the logPath to set
 	 */
 	/*
 	 * public void setLogPath(String logPath) { this.logPath = logPath; }
@@ -439,17 +411,14 @@ public class CastJiraConnectorBuilder extends Builder // implements
 	/**
 	 * @return the returnValue
 	 */
-	public int getReturnValue()
-	{
+	public int getReturnValue() {
 		return returnValue;
 	}
 
 	/**
-	 * @param returnValue
-	 *            the returnValue to set
+	 * @param returnValue the returnValue to set
 	 */
-	public void setReturnValue(int returnValue)
-	{
+	public void setReturnValue(int returnValue) {
 		this.returnValue = returnValue;
 	}
 
@@ -458,8 +427,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
 	 *
 	 * @return the log date time
 	 */
-	private String getLogDateTime()
-	{
+	private String getLogDateTime() {
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HHmmss");
 		return format.format(cal.getTime()).toString();
@@ -468,17 +436,14 @@ public class CastJiraConnectorBuilder extends Builder // implements
 	/**
 	 * @return the workFlow
 	 */
-	public String getWorkFlow()
-	{
+	public String getWorkFlow() {
 		return workFlow;
 	}
 
 	/**
-	 * @param workFlow
-	 *            the workFlow to set
+	 * @param workFlow the workFlow to set
 	 */
-	public void setWorkFlow(String workFlow)
-	{
+	public void setWorkFlow(String workFlow) {
 		this.workFlow = workFlow;
 	}
 
@@ -486,8 +451,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
 	// If your plugin doesn't really define any property on Descriptor,
 	// you don't have to do this.
 	@Override
-	public DescriptorImpl getDescriptor()
-	{
+	public DescriptorImpl getDescriptor() {
 		return (DescriptorImpl) super.getDescriptor();
 	}
 
@@ -503,87 +467,83 @@ public class CastJiraConnectorBuilder extends Builder // implements
 	@Extension
 	// This indicates to Jenkins that this is an implementation of an extension
 	// point.
-	public static final class DescriptorImpl extends BuildStepDescriptor<Builder>
-	{
+	public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 		private String jiraExportLoc;
 		private JSONObject useResolution;
 		private String resolution;
 
 		/**
-		 * To persist global configuration information, simply store it in a
-		 * field and call save().
+		 * To persist global configuration information, simply store it in a field and
+		 * call save().
 		 * 
 		 * <p>
 		 * If you don't want fields to be persisted, use <tt>transient</tt>.
 		 */
 
 		/**
-		 * In order to load the persisted global configuration, you have to call
-		 * load() in the constructor.
+		 * In order to load the persisted global configuration, you have to call load()
+		 * in the constructor.
 		 */
-		public DescriptorImpl()
-		{
+		public DescriptorImpl() {
 			load();
 		}
 
 		/**
 		 * Performs on-the-fly validation of the form field
 		 * 
-		 * @param value
-		 *            the value
+		 * @param value the value
 		 * @return the form validation
-		 * @throws IOException
-		 *             Signals that an I/O exception has occurred.
-		 * @throws ServletException
-		 *             the servlet exception
+		 * @throws IOException      Signals that an I/O exception has occurred.
+		 * @throws ServletException the servlet exception
 		 */
-		public FormValidation doCheckAppName(@QueryParameter String value) throws IOException, ServletException
-		{
-			if (value.length() == 0) return FormValidation.error("Please set the Application Name. It is mandatory");
+		public FormValidation doCheckAppName(@QueryParameter String value) throws IOException, ServletException {
+			if (value.length() == 0)
+				return FormValidation.error("Please set the Application Name. It is mandatory");
 			return FormValidation.ok();
 		}
 
-		public FormValidation doCheckCastUserName(@QueryParameter String value) throws IOException, ServletException
-		{
-			if (value.length() == 0) return FormValidation.error("Please set the Cast User Name. It is mandatory");
+		public FormValidation doCheckCastUserName(@QueryParameter String value) throws IOException, ServletException {
+			if (value.length() == 0)
+				return FormValidation.error("Please set the Cast User Name. It is mandatory");
 			return FormValidation.ok();
 		}
 
-		public FormValidation doCheckCastUserPassword(@QueryParameter String value) throws IOException, ServletException
-		{
-			if (value.length() == 0) return FormValidation.error("Please set the Cast User Password. It is mandatory");
+		public FormValidation doCheckCastUserPassword(@QueryParameter String value)
+				throws IOException, ServletException {
+			if (value.length() == 0)
+				return FormValidation.error("Please set the Cast User Password. It is mandatory");
 			return FormValidation.ok();
 		}
 
-		public FormValidation doCheckDatabaseHost(@QueryParameter String value) throws IOException, ServletException
-		{
-			if (value.length() == 0) return FormValidation.error("Please set the Database Host. It is mandatory");
+		public FormValidation doCheckDatabaseHost(@QueryParameter String value) throws IOException, ServletException {
+			if (value.length() == 0)
+				return FormValidation.error("Please set the Database Host. It is mandatory");
 			return FormValidation.ok();
 		}
 
-		public FormValidation doCheckDatabaseName(@QueryParameter String value) throws IOException, ServletException
-		{
-			if (value.length() == 0) return FormValidation.error("Please set the Database Name. It is mandatory");
+		public FormValidation doCheckDatabaseName(@QueryParameter String value) throws IOException, ServletException {
+			if (value.length() == 0)
+				return FormValidation.error("Please set the Database Name. It is mandatory");
 			return FormValidation.ok();
 		}
 
-		public FormValidation doCheckDatabasePort(@QueryParameter String value) throws IOException, ServletException
-		{
-			if (value.length() == 0) return FormValidation.error("Please set the Database Port. It is mandatory.");
+		public FormValidation doCheckDatabasePort(@QueryParameter String value) throws IOException, ServletException {
+			if (value.length() == 0)
+				return FormValidation.error("Please set the Database Port. It is mandatory.");
 			return FormValidation.ok();
 		}
 
 		@Override
-		public CastJiraConnectorBuilder newInstance(StaplerRequest req, JSONObject formData)
-		{
+		public CastJiraConnectorBuilder newInstance(StaplerRequest req, JSONObject formData) {
 			return req.bindJSON(CastJiraConnectorBuilder.class, formData);
 		}
 
-		public FormValidation doCheckSchemaProfile(@QueryParameter String value) throws IOException, ServletException
-		{
-			if (value.length() == 0) return FormValidation.error("Please set the Database Schema. It is mandatory.");
-			if (!value.toLowerCase().endsWith("_central")) return FormValidation
-					.error("Please set Database Schema has to be the central one xxx_central. It is mandatory.");
+		public FormValidation doCheckSchemaProfile(@QueryParameter String value) throws IOException, ServletException {
+			if (value.length() == 0)
+				return FormValidation.error("Please set the Database Schema. It is mandatory.");
+			if (!value.toLowerCase().endsWith("_central"))
+				return FormValidation
+						.error("Please set Database Schema has to be the central one xxx_central. It is mandatory.");
 			return FormValidation.ok();
 		}
 
@@ -593,9 +553,9 @@ public class CastJiraConnectorBuilder extends Builder // implements
 				@QueryParameter("databasePort") @RelativePath("..") final String databasePort,
 				@QueryParameter("castUserName") @RelativePath("..") final String castUserName,
 				@QueryParameter("castUserPassword") @RelativePath("..") final String castUserPassword,
-				@QueryParameter("useDatabase") @RelativePath("..") final String useDatabase)
-		{
+				@QueryParameter("useDatabase") @RelativePath("..") final String useDatabase) {
 			ListBoxModel m = new ListBoxModel();
+			m.add("");
 			DatabaseConnection conn = null;
 
 			if (databaseHost != null && databaseName != null && databasePort != null && castUserName != null
@@ -612,7 +572,8 @@ public class CastJiraConnectorBuilder extends Builder // implements
 				} catch (SQLException e) {
 					return m;
 				} finally {
-					if (conn != null) conn.closeConnection();
+					if (conn != null)
+						conn.closeConnection();
 				}
 			}
 			return m;
@@ -627,8 +588,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
 				@QueryParameter("useDatabase") @RelativePath("..") final String useDatabase,
 				@QueryParameter("schemaName") final String schemaName
 
-		)
-		{
+		) {
 			ListBoxModel m = new ListBoxModel();
 			DatabaseConnection conn = null;
 
@@ -647,7 +607,8 @@ public class CastJiraConnectorBuilder extends Builder // implements
 				} catch (SQLException e) {
 					return m;
 				} finally {
-					if (conn != null) conn.closeConnection();
+					if (conn != null)
+						conn.closeConnection();
 				}
 			}
 			return m;
@@ -656,8 +617,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
 		public ListBoxModel doFillProjNameItems(
 				@QueryParameter("jiraRestApiUrl") @RelativePath("..") final String jiraRestApiUrl,
 				@QueryParameter("jiraUser") @RelativePath("..") final String jiraUser,
-				@QueryParameter("jiraUserPassword") @RelativePath("..") final String jiraUserPassword)
-		{
+				@QueryParameter("jiraUserPassword") @RelativePath("..") final String jiraUserPassword) {
 			ListBoxModel m = new ListBoxModel();
 			if (jiraRestApiUrl != null && jiraUser != null && jiraUserPassword != null) {
 
@@ -676,81 +636,37 @@ public class CastJiraConnectorBuilder extends Builder // implements
 			return m;
 		}
 
-//		public ListBoxModel doFillJiraComponentNameItems(@QueryParameter("jiraRestApiUrl") @RelativePath("..") final String jiraRestApiUrl,
-//				@QueryParameter("jiraUser") @RelativePath("..") final String jiraUser,
-//				@QueryParameter("jiraUserPassword") @RelativePath("..") final String jiraUserPassword,
-//				@QueryParameter("projName") final String jiraProject,
-//				@QueryParameter("jiraIssueType") final String jiraIssueType)
-//		{
-//			ListBoxModel m = new ListBoxModel();
-//			if (jiraRestApiUrl != null && jiraUser != null && jiraUserPassword != null) {
-//					
-//					List<Component> components;
-//					try {
-//						BasicCredentials creds = new BasicCredentials(jiraUser, jiraUserPassword);
-//						JiraClient jira = new  JiraClient(jiraRestApiUrl,creds);
-//						
-//						components = jira.getComponentsAllowedValues(jiraProject, jiraIssueType);
-//						
-//						for (int ii = 0; ii < components.size(); ii++) {
-//							m.add(components.get(ii).getName());
-//						}
-//					} catch (JiraException e) {
-//						e.printStackTrace();
-//					}
-//			}
-//			return m;
-//		}
-
-//		private String getProjectId(String jiraRestApiUrl, String userId, String password, String projectName)
-//		{
-//			BasicCredentials creds = new BasicCredentials(userId, password);
-//			JiraClient jira = new  JiraClient(jiraRestApiUrl,creds);
-//			
-//			String projectId="";
-//			List<Project> projects = jira.getProjects();
-//			for (int ii = 0; ii < projects.size(); ii++) {
-//				Project prj = projects.get(ii);
-//				if (prj.getName().equalsIgnoreCase(projectName)) {
-//					projectId = prj.getId();
-//					break;
-//				}
-//			}
-//		}
 		public ListBoxModel doFillJiraComponentNameItems(
 				@QueryParameter("jiraRestApiUrl") @RelativePath("..") final String jiraRestApiUrl,
 				@QueryParameter("jiraUser") @RelativePath("..") final String jiraUser,
 				@QueryParameter("jiraUserPassword") @RelativePath("..") final String jiraUserPassword,
-				@QueryParameter("projName") final String projName
-				)
-		{
-//			String thisProjName = projName.replace(" ", "\\\\x0020").replace("(", "").replace(")", "");
-			
+				@QueryParameter("projName") final String projName) {
 			ListBoxModel m = new ListBoxModel();
 			m.add("");
 			if (jiraRestApiUrl != null && jiraUser != null && jiraUserPassword != null) {
 				try {
 					BasicCredentials creds = new BasicCredentials(jiraUser, jiraUserPassword);
 					JiraClient jira = new JiraClient(jiraRestApiUrl, creds);
-					
-					//get the project object from Jira
+
+					// get the project object from Jira
 					List<Project> projects = jira.getProjects();
 					Project project = null;
-					for (Project p:  projects)
-					{
-						if (p.getName().equals(projName))
-						{
+					for (Project p : projects) {
+						if (p.getName().equals(projName)) {
 							project = Project.get(jira.getRestClient(), p.getKey());
 							break;
 						}
 					}
-					
-					List <Component> components = project.getComponents();
-					for (Component c: components)
-					{
-						m.add(c.getName());
+
+					if (project != null) {
+						List<Component> components = project.getComponents();
+						if (components != null) {
+							for (Component c : components) {
+								m.add(c.getName());
+							}
+						}
 					}
-					
+
 				} catch (JiraException e) {
 
 				}
@@ -761,8 +677,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
 		public ListBoxModel doFillJiraIssueTypeItems(
 				@QueryParameter("jiraRestApiUrl") @RelativePath("..") final String jiraRestApiUrl,
 				@QueryParameter("jiraUser") @RelativePath("..") final String jiraUser,
-				@QueryParameter("jiraUserPassword") @RelativePath("..") final String jiraUserPassword)
-		{
+				@QueryParameter("jiraUserPassword") @RelativePath("..") final String jiraUserPassword) {
 			ListBoxModel m = new ListBoxModel();
 			if (jiraRestApiUrl != null && jiraUser != null && jiraUserPassword != null) {
 				List<IssueType> issueTypes;
@@ -782,16 +697,15 @@ public class CastJiraConnectorBuilder extends Builder // implements
 
 		public FormValidation doTestJiraConnection(@QueryParameter("jiraRestApiUrl") final String jiraRestApiUrl,
 				@QueryParameter("jiraUser") final String jiraUser,
-				@QueryParameter("jiraUserPassword") final String jiraUserPassword)
-		{
+				@QueryParameter("jiraUserPassword") final String jiraUserPassword) {
 			Logger log = LogManager.getLogManager().getLogger("hudson.WebAppMain");
-			
+
 			log.info("Jira Login Validation");
-			
+
 			List<Project> projects;
 			try {
-				log.info(String.format("User: %s URL: %s", jiraUser,jiraRestApiUrl));
-				
+				log.info(String.format("User: %s URL: %s", jiraUser, jiraRestApiUrl));
+
 				BasicCredentials creds = new BasicCredentials(jiraUser, jiraUserPassword);
 				JiraClient jira = new JiraClient(jiraRestApiUrl, creds);
 				projects = jira.getProjects();
@@ -814,21 +728,21 @@ public class CastJiraConnectorBuilder extends Builder // implements
 					RestException restEx = (RestException) cause;
 					int status = restEx.getHttpStatusCode();
 					switch (status) {
-						case 400:
-							message = "Bad Request";
-							break;
-						case 401:
-							message = "Invalid User Id or Password";
-							break;
-						case 403:
-							message = "Access Denied";
-							break;
-						case 404:
-							message = "URL Not Found";
-							break;
-						default:
-							message = "Unknown Error";
-							break;
+					case 400:
+						message = "Bad Request";
+						break;
+					case 401:
+						message = "Invalid User Id or Password";
+						break;
+					case 403:
+						message = "Access Denied";
+						break;
+					case 404:
+						message = "URL Not Found";
+						break;
+					default:
+						message = "Unknown Error";
+						break;
 					}
 				}
 				return FormValidation.error(message);
@@ -840,13 +754,18 @@ public class CastJiraConnectorBuilder extends Builder // implements
 				@QueryParameter("databaseName") final String databaseName,
 				@QueryParameter("databasePort") final String databasePort,
 				@QueryParameter("castUserName") final String castUserName,
-				@QueryParameter("castUserPassword") final String castUserPassword) throws IOException, ServletException
-		{
-			if (castUserName.isEmpty()) return FormValidation.error("Please fill-in the Cast User Name");
-			if (castUserPassword.isEmpty()) return FormValidation.error("Please fill-in the Cast User Password");
-			if (databaseHost.isEmpty()) return FormValidation.error("Please fill-in the database host");
-			if (databaseName.isEmpty()) return FormValidation.error("Please fill-in the database name");
-			if (databasePort.isEmpty()) return FormValidation.error("Please fill-in the database port");
+				@QueryParameter("castUserPassword") final String castUserPassword)
+				throws IOException, ServletException {
+			if (castUserName.isEmpty())
+				return FormValidation.error("Please fill-in the Cast User Name");
+			if (castUserPassword.isEmpty())
+				return FormValidation.error("Please fill-in the Cast User Password");
+			if (databaseHost.isEmpty())
+				return FormValidation.error("Please fill-in the database host");
+			if (databaseName.isEmpty())
+				return FormValidation.error("Please fill-in the database name");
+			if (databasePort.isEmpty())
+				return FormValidation.error("Please fill-in the database port");
 			try {
 				System.out.println(castUserName);
 
@@ -864,8 +783,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
 			return FormValidation.ok("Connection Test Successful");
 		}
 
-		public FormValidation doCheckJiraRestApiUrl(@QueryParameter String value) throws IOException, ServletException
-		{
+		public FormValidation doCheckJiraRestApiUrl(@QueryParameter String value) throws IOException, ServletException {
 			boolean isWarning = false;
 			boolean isError = false;
 			String msg = "";
@@ -885,42 +803,45 @@ public class CastJiraConnectorBuilder extends Builder // implements
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			if (isError) return FormValidation.error(msg);
-			else if (isWarning) return FormValidation.warning(msg);
+			if (isError)
+				return FormValidation.error(msg);
+			else if (isWarning)
+				return FormValidation.warning(msg);
 			else
 				return FormValidation.ok();
 		}
 
-		public FormValidation doCheckJiraUser(@QueryParameter String value) throws IOException, ServletException
-		{
-			if (value.isEmpty()) return FormValidation.error("Please set the Jira User Name. It is mandatory.");
+		public FormValidation doCheckJiraUser(@QueryParameter String value) throws IOException, ServletException {
+			if (value.isEmpty())
+				return FormValidation.error("Please set the Jira User Name. It is mandatory.");
 			else
 				return FormValidation.ok();
 		}
 
-		public FormValidation doCheckJiraUserPassword(@QueryParameter String value) throws IOException, ServletException
-		{
-			if (value.isEmpty()) return FormValidation.error("Please set the Jira User Password. It is mandatory.");
+		public FormValidation doCheckJiraUserPassword(@QueryParameter String value)
+				throws IOException, ServletException {
+			if (value.isEmpty())
+				return FormValidation.error("Please set the Jira User Password. It is mandatory.");
 			else
 				return FormValidation.ok();
 		}
 
-		public FormValidation doCheckJiraProjectName(@QueryParameter String value) throws IOException, ServletException
-		{
-			if (value.isEmpty()) return FormValidation.error("Please set the Jira Project Key Name. It is mandatory.");
+		public FormValidation doCheckJiraProjectName(@QueryParameter String value)
+				throws IOException, ServletException {
+			if (value.isEmpty())
+				return FormValidation.error("Please set the Jira Project Key Name. It is mandatory.");
 			return FormValidation.ok();
 		}
 
-		public FormValidation doCheckJiraIssueType(@QueryParameter String value) throws IOException, ServletException
-		{
-			if (value.isEmpty()) return FormValidation
-					.warning("If tou do not set the Jira Issue Type, 'Task' will be applied by default");
+		public FormValidation doCheckJiraIssueType(@QueryParameter String value) throws IOException, ServletException {
+			if (value.isEmpty())
+				return FormValidation
+						.warning("If tou do not set the Jira Issue Type, 'Task' will be applied by default");
 			return FormValidation.ok();
 		}
 
 		@SuppressWarnings("rawtypes")
-		public boolean isApplicable(Class<? extends AbstractProject> aClass)
-		{
+		public boolean isApplicable(Class<? extends AbstractProject> aClass) {
 			// Indicates that this builder can be used with all kinds of project
 			// types
 			return true;
@@ -929,14 +850,12 @@ public class CastJiraConnectorBuilder extends Builder // implements
 		/**
 		 * This human readable name is used in the configuration screen.
 		 */
-		public String getDisplayName()
-		{
+		public String getDisplayName() {
 			return "Cast To Jira Integration Plugin";
 		}
 
 		@Override
-		public boolean configure(StaplerRequest req, JSONObject formData) throws FormException
-		{
+		public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
 			jiraExportLoc = formData.getString("jiraExportLoc");
 			useResolution = (JSONObject) formData.getJSONObject("useResolution");
 			if (!useResolution.isNullObject()) {
@@ -949,45 +868,37 @@ public class CastJiraConnectorBuilder extends Builder // implements
 			return super.configure(req, formData);
 		}
 
-		public String getJiraExportLoc()
-		{
+		public String getJiraExportLoc() {
 			return jiraExportLoc;
 		}
 
-		public void setJiraExportLoc(String jiraExportLoc)
-		{
+		public void setJiraExportLoc(String jiraExportLoc) {
 			this.jiraExportLoc = jiraExportLoc;
 		}
 
-		public JSONObject getUseResolution()
-		{
+		public JSONObject getUseResolution() {
 			return useResolution;
 		}
 
-		public boolean isUseResolution()
-		{
-			return useResolution==null ? false : true;
+		public boolean isUseResolution() {
+			return useResolution == null ? false : true;
 		}
 
-		public void setUseResolution(JSONObject useResolution)
-		{
+		public void setUseResolution(JSONObject useResolution) {
 			this.useResolution = useResolution;
 		}
 
-		public String getResolution()
-		{
+		public String getResolution() {
 			return resolution;
 		}
 
-		public void setResolution(String resolution)
-		{
+		public void setResolution(String resolution) {
 			this.resolution = resolution;
 		}
 
 	} // end DescriptorImpl class
 
-	public ArrayList<CastJiraLinkage> getCastJiraLinkage()
-	{
+	public ArrayList<CastJiraLinkage> getCastJiraLinkage() {
 		return castJiraLinkage;
 	}
 

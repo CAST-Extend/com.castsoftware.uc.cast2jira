@@ -1,52 +1,94 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
 	<parent>
 		<groupId>org.jenkins-ci.plugins</groupId>
 		<artifactId>plugin</artifactId>
-		<version>2.11</version>
+		<version>3.4</version>
 		<relativePath />
 	</parent>
-
-	<groupId>com.castsoftware.jenkins.CastToJira</groupId>
-	<artifactId>CastToJiraConnector</artifactId>
-	<version>1.2</version>
+	<groupId>io.jenkins.plugins</groupId>
+	<artifactId>cast2Jira</artifactId>
+	<version>1.6</version>
 	<packaging>hpi</packaging>
-
-	<!-- get every artifact through repo.jenkins-ci.org, which proxies all the 
-		artifacts that we need -->
-	<repositories>
-		<repository>
-			<id>repo.jenkins-ci.org</id>
-			<url>http://repo.jenkins-ci.org/public/</url>
-		</repository>
-	</repositories>
-
-	<pluginRepositories>
-		<pluginRepository>
-			<id>repo.jenkins-ci.org</id>
-			<url>http://repo.jenkins-ci.org/public/</url>
-		</pluginRepository>
-	</pluginRepositories>
-
-	<organization>
-		<name>Cast Software</name>
-		<url>http://www.castsoftware.com/</url>
-	</organization>
-	<name>CastToJiraConnector</name>
-	<description>This plugin allows CAST AIP user to send the Action Plans to Jira.</description>
+	<properties>
+		<!-- Baseline Jenkins version you use to build the plugin. Users must have 
+			this version or newer to run. -->
+		<jenkins.version>2.7.3</jenkins.version>
+		<java.level>8</java.level>
+		<jackson.version>2.4.4</jackson.version>
+		<findbugs.skip>true</findbugs.skip>
+		<maven.javadoc.skip>true</maven.javadoc.skip>
+	</properties>
+	<name>CAST to Jira Interface</name>
+	<!-- The default licence for Jenkins OSS Plugins is MIT. Substitute for 
+		the applicable one if needed. -->
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+		</license>
+	</licenses>
 	<dependencies>
 		<dependency>
-			<groupId>commons-validator</groupId>
-			<artifactId>commons-validator</artifactId>
-			<version>1.4.0</version>
+			<groupId>org.jenkins-ci.plugins</groupId>
+			<artifactId>structs</artifactId>
+			<version>1.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jenkins-ci.plugins.workflow</groupId>
+			<artifactId>workflow-step-api</artifactId>
+			<version>2.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jenkins-ci.plugins.workflow</groupId>
+			<artifactId>workflow-cps</artifactId>
+			<version>2.39</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jenkins-ci.plugins.workflow</groupId>
+			<artifactId>workflow-job</artifactId>
+			<version>2.11.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jenkins-ci.plugins.workflow</groupId>
+			<artifactId>workflow-basic-steps</artifactId>
+			<version>2.6</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>net.rcarz</groupId>
 			<artifactId>jira-client</artifactId>
 			<version>0.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jenkins-ci.plugins.workflow</groupId>
+			<artifactId>workflow-durable-task-step</artifactId>
+			<version>2.13</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jenkins-ci.plugins.workflow</groupId>
+			<artifactId>workflow-api</artifactId>
+			<version>2.20</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jenkins-ci.plugins.workflow</groupId>
+			<artifactId>workflow-support</artifactId>
+			<version>2.14</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.8.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.castsoftware.jira</groupId>
@@ -58,10 +100,35 @@
 			<artifactId>postgresql</artifactId>
 			<version>9.1-901.jdbc4</version>
 		</dependency>
+
+
 	</dependencies>
+
+	<!-- If you want this to appear on the wiki page: <developers> <developer> 
+		<id>bhacker</id> <name>Bob Q. Hacker</name> <email>bhacker@nowhere.net</email> 
+		</developer> </developers> -->
+
+	<!-- Assuming you want to host on @jenkinsci: <url>https://wiki.jenkins.io/display/JENKINS/TODO+Plugin</url> 
+		<scm> <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection> 
+		<developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection> 
+		<url>https://github.com/jenkinsci/${project.artifactId}-plugin</url> </scm> -->
+	<repositories>
+		<repository>
+			<id>repo.jenkins-ci.org</id>
+			<url>https://repo.jenkins-ci.org/public/</url>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>repo.jenkins-ci.org</id>
+			<url>https://repo.jenkins-ci.org/public/</url>
+		</pluginRepository>
+	</pluginRepositories>
 	<build>
 		<pluginManagement>
 			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>
@@ -78,7 +145,7 @@
 											maven-javadoc-plugin
 										</artifactId>
 										<versionRange>
-											[2.10.1,)
+											[2.10.4,)
 										</versionRange>
 										<goals>
 											<goal>javadoc</goal>
@@ -95,11 +162,4 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-	<properties>
-		<maven.javadoc.skip>true</maven.javadoc.skip>
-		<maven.test.skip>true</maven.test.skip>
-		<findbugs.skip>true</findbugs.skip>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.7</maven.compiler.target>
-	</properties>
 </project>
