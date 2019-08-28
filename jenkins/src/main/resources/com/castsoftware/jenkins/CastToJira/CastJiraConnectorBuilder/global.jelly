@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?> 
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <!--
     This Jelly script is used to produce the global configuration option.
@@ -10,8 +11,7 @@
     It's also often useful to just check other similar scripts to see what
     tags they use. Views are always organized according to its owner class,
     so it should be straightforward to find them.
-  -->
-  
+  -->  
 	<f:section title="CAST Action Plan to Jira Setup">
 		<f:entry title="Jira Export Utility Location" field="jiraExportLoc">
 		  <f:textbox />

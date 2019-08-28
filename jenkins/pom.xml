@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>io.jenkins.plugins</groupId>
 	<artifactId>cast2Jira</artifactId>
-	<version>1.6</version>
+	<version>1.7</version>
 	<packaging>hpi</packaging>
 	<properties>
 		<!-- Baseline Jenkins version you use to build the plugin. Users must have 
