@@ -24,7 +24,7 @@ public class Constants {
 
 	/** The Constant CAST_DB_PROVIDER. */
 	public static final String CAST_DB_PROVIDER = "databaseprovider";
-
+	
 	/** The Constant CAST_DB_HOST. */
 	public static final String CAST_DB_HOST = "databasehost";
 
