@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>io.jenkins.plugins</groupId>
 	<artifactId>cast2Jira</artifactId>
-	<version>1.7</version>
+	<version>1.9</version>
 	<packaging>hpi</packaging>
 	<properties>
 		<!-- Baseline Jenkins version you use to build the plugin. Users must have 
@@ -86,17 +86,30 @@
 			<version>2.9.9.2</version>
 		</dependency>
 		<dependency>
-			<groupId>com.castsoftware.jira</groupId>
-			<artifactId>CastJiraConnector</artifactId>
-			<version>1.6</version>
-		</dependency>
-		<dependency>
 			<groupId>postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<version>9.1-901.jdbc4</version>
 		</dependency>
 
 
+		
+		<!-- https://mvnrepository.com/artifact/com.atlassian.jira/jira-rest-java-client -->
+
+		<dependency>
+			<groupId>com.castsoftware.jira</groupId>
+			<artifactId>CastJiraConnector</artifactId>
+			<version>4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.atlassian.jira</groupId>
+			<artifactId>jira-rest-java-client-core</artifactId>
+			<version>5.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>io.atlassian.fugue</groupId>
+			<artifactId>fugue</artifactId>
+			<version>4.7.2</version>
+		</dependency>
 	</dependencies>
 
 	<!-- If you want this to appear on the wiki page: <developers> <developer> 

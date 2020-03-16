@@ -19,10 +19,10 @@
 		
 		<f:block>
 			<table>
-				<f:optionalBlock name="useResolution" title="Don't close issue flag it as resolved when identified as fixed by CAST" checked="${instance.resolution != null}">
-		      <f:entry title="Resolution" field="resolution">
-		        <f:textbox />
-		      </f:entry>
+				<f:optionalBlock name="useResolution" title="Use custom resolution when an issue is identified as fixed by CAST" checked="${instance.resolution != null}">
+			      <f:entry title="Resolution" field="resolution">
+			        <f:textbox />
+			      </f:entry>
 	    	</f:optionalBlock>
 			</table>
 		</f:block>
