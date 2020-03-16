@@ -36,13 +36,6 @@ import hudson.tasks.Builder;
 import hudson.tasks.Shell;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import net.rcarz.jiraclient.BasicCredentials;
-import net.rcarz.jiraclient.Component;
-import net.rcarz.jiraclient.IssueType;
-import net.rcarz.jiraclient.JiraClient;
-import net.rcarz.jiraclient.JiraException;
-import net.rcarz.jiraclient.Project;
-import net.rcarz.jiraclient.RestException;
 import net.sf.json.JSONObject;
 
 /**
