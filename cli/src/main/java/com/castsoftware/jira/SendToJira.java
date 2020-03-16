@@ -15,6 +15,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.castsoftware.jira.pojo.ActionPlanViolation;
 import com.castsoftware.jira.util.Constants;
+import com.castsoftware.jira.util.JiraException;
 import com.castsoftware.jira.util.OptionsValidation;
 
 
@@ -40,7 +41,7 @@ public class SendToJira {
 	 *            the arguments
 	 */
 	public static void main(String[] args) {
-		int index;
+//		int index;
 		
 		System.out.println("CAST2Jira v" + SendToJira.class.getPackage().getImplementationVersion() + " (c) 2017, CAST Software, All Rights Reserved" );
 
@@ -115,30 +116,26 @@ public class SendToJira {
 							}
 						}
 					}
-					
-					
-					CreateJiraIssues createissues = new CreateJiraIssues(
+					CreateJiraIssues createJiraIssues = new CreateJiraIssues(
 							line.getOptionValue(Constants.JIRA_USER_NAME),
 							line.getOptionValue(Constants.JIRA_USER_PASSWORD),
 							line.getOptionValue(Constants.JIRA_REST_API_URL),
-							map,
 							line.getOptionValue(Constants.JIRA_PROJECT_NAME),
 							issueType, 
-//							assigneeName,
-							line.getOptionValue(Constants.CAST_APPLICATION_NAME),
 							markIssueResolved,
 							resolutionTxt,
-							line.getOptionValue(Constants.COMPONENT));
-					
-					returnValue=createissues.getTotalNumOfIssuesNotAddedByError();
-					
-					log.info("Final Report : ");
-					log.info("Number of Total Issues Processed : " + createissues.getTotalNumOfIssues());
-					log.info("Number of Total Issues Added : " + createissues.getTotalNumOfIssuesAdded());
-					log.info("Number of Total Issues Closed : " + createissues.getTotalNumOfIssuesClosed());
-					log.info("Number of Total Issues Not Added because of Unprioritized or Low Priority Action Plan Item : " + createissues.getTotalNumOfUnprioritizedIssues());
-					log.info("Number of Total Issues Not Added by Error : " + createissues.getTotalNumOfIssuesNotAddedByError());
-					log.info("Number of Total Issues Not Added by Previous Existence in Jira: " + createissues.getTotalNumOfIssuesNotAddedByExist());
+							line.getOptionValue(Constants.COMPONENT),
+							map
+					);
+                    log.info("Final Report : ");
+                    log.info("Number of Total Issues Processed : " + createJiraIssues.getTotalNumOfIssues());
+                    log.info("Number of Total Issues Added : " + createJiraIssues.getTotalNumOfIssuesAdded());
+                    log.info("Number of Total Issues Closed : " + createJiraIssues.getTotalNumOfIssuesClosed());
+                    log.info("Number of Total Issues Reopened : " + createJiraIssues.getTotalNumOfIssuesReopen());
+                    log.info("Number of Total Issues Not Added because of Unprioritized or Low Priority Action Plan Item : " + createJiraIssues.getTotalNumOfUnprioritizedIssues());
+                    log.info("Number of Total Issues Not Added by Error : " + createJiraIssues.getTotalNumOfIssuesNotAddedByError());
+                    log.info("Number of Total Issues Not Added by Previous Existence in Jira: " + createJiraIssues.getTotalNumOfIssuesNotAddedByExist());
+                    
 				} else {
 					log.info("No violations in the action plan. Please review it");
 				}
@@ -149,11 +146,12 @@ public class SendToJira {
 			new HelpFormatter().printHelp(SendToJira.class.getCanonicalName(),
 					options);
 			System.exit(returnValue);
-
+        } catch (JiraException e) {
+            log.error(String.format("Fatal Error: %s",e.getMessage()));
+            System.exit(returnValue);
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.out
-					.println("Please review the log in order to find out why the action plan delivery to Jira has not been successful added");
+			log.error("Fatal error, please review the log for more information");
 			System.exit(returnValue);
 		}
 		System.exit(returnValue);
@@ -252,6 +250,7 @@ public class SendToJira {
 						+ "\nBy default both standard outputs are active"));
 
 		// options.addOption("h", "help", false, "Print Help Message");
+
 		group.addOption(new Option(
 				Constants.CAST_REST_API_URL,
 				true,
