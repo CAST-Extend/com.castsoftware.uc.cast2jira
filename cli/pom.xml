@@ -77,17 +77,6 @@
 			<artifactId>fugue</artifactId>
 			<version>4.7.2</version>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpclient-cache</artifactId>
-			<version>4.5.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-resources-plugin</artifactId>
-			<version>3.1.0</version>
-			<type>maven-plugin</type>
-		</dependency>
 	</dependencies>
 
 	<build>
