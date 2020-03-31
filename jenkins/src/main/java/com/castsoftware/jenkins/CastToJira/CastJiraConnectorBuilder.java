@@ -194,7 +194,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
         } else if (isWindows()) {
             listener.getLogger().println("Executing Windows Batch");
 
-            // command = String.format("@@echo off%n%s", command);
+            command = String.format("@@echo off%n%s", command);
 
             BatchFile batchFile = new BatchFile(command);
             rslt = batchFile.perform(build, launcher, listener);
