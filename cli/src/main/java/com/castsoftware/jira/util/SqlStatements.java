@@ -136,7 +136,7 @@ public class SqlStatements
 	 * @throws SQLException
 	 *             the SQL exception
 	 */
-	private String getSQLStatement() throws SQLException
+	private String getSQLStatement() 
 	{
 		String techCriteria = new StringBuffer().append("\n(select string_agg(")
 				.append("dmdp.metric_description,', ') from ").append(getSchemaProfile())

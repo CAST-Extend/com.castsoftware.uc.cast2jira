@@ -77,6 +77,18 @@ public class Constants {
 	public static final String RESOLUTION = "resolution";
 	public static final String COMPONENT = "component";
 
+    /** The Constant WORKFLOW_FILE. */
+    public static final String WORKFLOW_FILE = "workflow.properties";
+    
+    public static final String WORKFLOW_STATUS_OPEN = "status.open";
+    public static final String WORKFLOW_STATUS_DONE = "status.done";
+    public static final String WORKFLOW_STATUS_PROGRESS = "status.progress";
+
+    public static final String WORKFLOW_TRANSITION_DONE = "transition.done";
+    public static final String WORKFLOW_TRANSITION_REOPEN = "transition.reopen";
+    public static final String WORKFLOW_TRANSITION_BLACKLIST = "transition.blacklist";
+
+
 	// Properties & log file names
 	/** The Constant LOG4J_PROPERTIES_FILE. */
 	public static final String LOG4J_PROPERTIES_FILE = "log4j.properties";

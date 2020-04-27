@@ -1,5 +1,8 @@
 package com.castsoftware.jira.util;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -29,11 +32,22 @@ public class Configuration {
 	/** The priority map. */
 	private HashMap<String, String> priorityMap = new HashMap<String, String>(0);
 
+    /** The priority map. */
+    private Properties workflowMap = new Properties();
+
 	/** The field labels map. */
 	private HashMap<String, String> fieldLabelsMap = new HashMap<String, String>(
 			0);
 
-	/**
+	public Configuration() {
+	    loadPriorityMapping();
+	    loadWorkflow();
+	    loadCastToJiraFieldsMapping();
+    }
+
+	public String getWorkflow(String key) { return workflowMap.getProperty(key,"").trim(); }
+	
+    /**
 	 * Sets the update log4j configuration.
 	 * 
 	 * @param logPathFile
@@ -123,18 +137,51 @@ public class Configuration {
 		}
 
 	}
-
+	
+	private InputStream getPropStream(String fileName) throws FileNotFoundException
+	{
+	    InputStream rslt = null;
+	    String path = System.getProperty("user.dir");
+	    
+	    String fname = String.format("%s\\%s",path ,fileName);
+	    if (new File(fname).isFile())
+	    {
+	        rslt = new FileInputStream(fname);
+	    } else {
+	        rslt = this.getClass().getResourceAsStream(String.format("/%s",fileName));
+	    }
+	    
+	    return rslt;
+	}
+	
+	public void loadWorkflow() {
+        
+        try {
+            InputStream configStream = getPropStream(Constants.WORKFLOW_FILE);
+            workflowMap.load(configStream);
+            configStream.close();
+        
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        log.info(workflowMap.toString());
+        
+        
+    }
+    
 	/**
 	 * Load priority mapping.
 	 */
-	public void loadPriorityMapping() {
+	private void loadPriorityMapping() {
 		Properties props = new Properties();
 
 		try {
-			String priorityMappingFileName = "/" +  Constants.PRIORITY_MAPPING_FILE;
-			log.info(String.format("Priority Mapping:  %s", priorityMappingFileName)); 
+//			String priorityMappingFileName = "/" +  Constants.PRIORITY_MAPPING_FILE;
+			log.info(String.format("Priority Mapping:  %s", Constants.PRIORITY_MAPPING_FILE)); 
 			
-			InputStream configStream = this.getClass().getResourceAsStream(priorityMappingFileName);
+            InputStream configStream = getPropStream(Constants.PRIORITY_MAPPING_FILE);
+//			InputStream configStream = this.getClass().getResourceAsStream(priorityMappingFileName);
 			props.load(configStream);
 			log.info(props.toString());
 			
@@ -201,9 +248,14 @@ public class Configuration {
 	 */
 	public String getPriorityMappingConversion(String priority) {
 		String result;
+		/*
 		if (priorityMap.isEmpty()) {
 			loadPriorityMapping();
 		}
+        if (workflowMap.isEmpty()) {
+            loadWorkflow();
+        }
+        */
 		if (!priorityMap.containsKey(priority)) {
 			log.error("Priority mapping value not found ="
 					+ priority
@@ -231,7 +283,7 @@ public class Configuration {
 	/**
 	 * Load cast to jira fields mapping.
 	 */
-	public void loadCastToJiraFieldsMapping() {
+	private void loadCastToJiraFieldsMapping() {
 		Properties props = new Properties();
 
 		try {
