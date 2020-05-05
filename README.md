@@ -38,7 +38,7 @@ This document provides installation, deployment and usage instructions for the C
 ### CLI and Jenkins Plugin
 | Version  | Author | Description |
 | ----- | -------------------- | --------- |
-| 1.8.0 | Nevin Kaplan  | * eliminate third party AIP in favor of the Atlassian supported version * reworked login to accommodate new Atlassian requirements * reworked status transitions to work with SONY's standard workflow |
+| 1.8.0 | Nevin Kaplan  | * eliminate third party AIP in favor of the Atlassian supported version<br>* reworked login to accommodate new Atlassian requirements <br>* reworked status transitions to work with SONY's standard workflow |
 
 
 # Use Cases
