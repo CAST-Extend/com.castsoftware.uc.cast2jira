@@ -85,6 +85,3 @@ The CAST mapping section contains a list of all the CAST fields that are exporte
 ![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/custome.png)
 
 
-
-
-Documentation for this CAST Extension can be found in the Wiki section of this site (https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/wiki)
