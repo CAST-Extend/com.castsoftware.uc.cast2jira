@@ -39,7 +39,8 @@ This document provides installation, deployment and usage instructions for the C
 | Version  | Author | Description |
 | ----- | -------------------- | --------- |
 | 1.8.0 | Nevin Kaplan  | * eliminate third party AIP in favor of the Atlassian supported version<br>* reworked login to accommodate new Atlassian requirements <br>* reworked status transitions to work with SONY's standard workflow |
-
+| 1.9.0 | Nevin Kaplan | Security Enhancements |
+| 1.10.0 | Nevin Kaplan| * Added workflow properties<br> * various bug fixes | 
 
 # Use Cases
 Transfer the CAST Action Plan to Jira to allow easier access by the clients development team.    
