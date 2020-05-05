@@ -26,17 +26,18 @@ This document provides installation, deployment and usage instructions for the C
 | 1.0.0 | Fernando Merino | Initial Version |
 | 1.5.4 | Nevin Kaplan | Compatible with CAST between versions 7.3.6 and 8.2 |
 | 1.6.0 | Nevin Kaplan | Made compatible with CAST v8.3 |
-| 1.7.0 | Nevin Kaplan | Merged Version management |
+| 1.7.0 | Nevin Kaplan | Merged component version history |
 
 ### CastToJira Jenkins Plugin
 | Version  | Author | Description |
 | ----- | -------------------- | --------- |
 | 1.0.0 | Fernando Merino | Initial Version |
 | 2.11.0 | Nevin Kaplan | Allowed for more than one application |
-| 1.7.0 | Nevin Kaplan | Merged Version management |
+| 1.7.0 | Nevin Kaplan | Merged component version history |
 
 ### CLI and Jenkins Plugin
 | Version  | Author | Description |
+| ----- | -------------------- | --------- |
 | 1.8.0 | Nevin Kaplan  | * eliminate third party AIP in favor of the Atlassian supported version
 * reworked login to accommodate new Atlassian requirements
 * reworked status transitions to work with SONY's standard workflow |
