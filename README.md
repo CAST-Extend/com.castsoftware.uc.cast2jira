@@ -117,7 +117,7 @@ The CAST mapping section contains a list of all the CAST fields that are exporte
 ### Using A Custom Jira Workflow
 This extension is designed to work with any workflow from the Jira “Software Simplified Workflow” to your custom workflow.  There is no additional configuration required, if you are using the “Software Simplified Workflow”.  To configure the extension to work any other workflow update the workflow configuration is stored in the “workflow.properties” file.  The updated file must be in the same folder as CAST2Jira.jar file.    
 
-![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/workflow1.png)
+<div style="text-align:center">![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/workflow1.png)</div>
 
 ![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/custome.png)
 
