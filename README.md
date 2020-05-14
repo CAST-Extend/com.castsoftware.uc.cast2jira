@@ -4,7 +4,7 @@ Jenkins plugin and CLI to export CAST action items to Jira.
 Warning: The Extension described in this document is delivered as-is. This Extension is made available by CAST User Community and governed by Open Source License. Please consider all necessary steps to validate and to test the Extension in your environment before using it in production.
 
 # Overview
-The CAST AIP Action Plan to Jira Jenkins plugin is designed to allow the user to export the contents of the CAST Engineering Dashboard (ED) Action Plan to Jira as a bug.  The export will contain the following information:  
+The CAST AIP Action Plan to Jira Jenkins plugin is designed to allow the user to export the contents of the Engineering Dashboard (ED) Action Plan to Jira as a bug.  The export will contain the following information:  
 1.	Business Criteria
 2.	Technical Criteria
 3.	A description of the issue
@@ -91,6 +91,3 @@ The information exported to Jira can be customized by modifying the CastToJiraFi
 The CAST mapping section contains a list of all the CAST fields that are exported, formatted as a name value pair, with the value being added to the Jira export.  The second part, Jira field mapping has two fields, Summary and Description. Using them the utility knows where to put the cast information.  
 
 ![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/custome.png)
-
-
-
