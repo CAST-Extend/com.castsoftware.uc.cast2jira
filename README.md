@@ -85,9 +85,41 @@ Normally when an issue is marked as resolved in CAST, the Cast2Jira utility will
 
 ![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/global.png)
 
-# Executable Jar configuration
-## Jira Issue Customization
+# CLI
+## Execution
+
+java -jar CastToJira.jar 
+
+| Argument | Description |
+|----------|-------------|
+| applicationname  | CAST AIP Application name found in AIP Console and Management Studio. |
+| castusername  | The User Name used to login the AIP database. |
+| castuserpassword  | The User Password used to login the AIP database. |
+| databasehost  | Hostname or IP Address where the database server is running. |
+| databaseport  | Database listening port |
+| databasename  | Database name. If Oracle has been selected as database provider, this parameter is SID. |
+| databaseprovider  | Database provider parameter is use to identify the central database server type being used, CSS, Oracle or SQLServer. <br><dir> * CSS – CAST Storage Server <br> * Oracle <br> * SQLServer |
+| databaseschema  | The AIP Central database schema name |
+| jiraissuetype  | The Jira issue type |
+| jiraprojectname  | The Jira project name |
+| jirarestapiurl  | The Jira REST API name |
+| jirausername   | The Jira user name |
+| jirauserpassword  | The Jira user password or API Id |
+
+
+
+## Customization
+
+### Jira Issue Customization
 The information exported to Jira can be customized by modifying the CastToJiraFieldsMapping.template file, located in the export utility installation folder.  The template consists of two parts, CAST and Jira mappings.  
 The CAST mapping section contains a list of all the CAST fields that are exported, formatted as a name value pair, with the value being added to the Jira export.  The second part, Jira field mapping has two fields, Summary and Description. Using them the utility knows where to put the cast information.  
 
+### Using A Custom Jira Workflow
+This extension is designed to work with any workflow from the Jira “Software Simplified Workflow” to your custom workflow.  There is no additional configuration required, if you are using the “Software Simplified Workflow”.  To configure the extension to work any other workflow update the workflow configuration is stored in the “workflow.properties” file.  The updated file must be in the same folder as CAST2Jira.jar file.    
+
+![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/workflow1.png)
+
 ![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/custome.png)
+
+
+
