@@ -88,7 +88,7 @@ Normally when an issue is marked as resolved in CAST, the Cast2Jira utility will
 # CLI
 ## Execution
 
-java -jar CastToJira.jar 
+java -jar CastToJira.jar <arguments ...>
 
 | Argument | Description |
 |----------|-------------|
@@ -114,12 +114,16 @@ java -jar CastToJira.jar
 The information exported to Jira can be customized by modifying the CastToJiraFieldsMapping.template file, located in the export utility installation folder.  The template consists of two parts, CAST and Jira mappings.  
 The CAST mapping section contains a list of all the CAST fields that are exported, formatted as a name value pair, with the value being added to the Jira export.  The second part, Jira field mapping has two fields, Summary and Description. Using them the utility knows where to put the cast information.  
 
-### Using A Custom Jira Workflow
-This extension is designed to work with any workflow from the Jira “Software Simplified Workflow” to your custom workflow.  There is no additional configuration required, if you are using the “Software Simplified Workflow”.  To configure the extension to work any other workflow update the workflow configuration is stored in the “workflow.properties” file.  The updated file must be in the same folder as CAST2Jira.jar file.    
-
-<div style="text-align:center">![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/workflow1.png)</div>
-
 ![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/custome.png)
+
+### Using A Custom Jira Workflow
+This extension is designed to work with any workflow from the Jira “Software Simplified Workflow” to your custom workflow.  There is no additional configuration required if you are using the Classic Jira workflow.  To configure the extension to work any other workflow update the “workflow.properties”.   This file is provided in the installation package and should have been installed in the same folder as CAST2Jira.jar file.       
+
+![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/workflow1.png)
+
+
+
+
 
 
 
