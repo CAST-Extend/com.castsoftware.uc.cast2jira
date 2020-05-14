@@ -121,7 +121,19 @@ This extension is designed to work with any workflow from the Jira “Software S
 
 ![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/workflow1.png)
 
+<ins>How it works</ins>
 
+The “workflow.properties” file is divided into two parts, status and transition.  The status section is used to identify which status the ticket can transition to. The transition tells the software how to get there.  There are only three states the issue can be transitioned to, open, in progress and done, defined as follows:
+status.open=OPEN
+status.done=CLOSED
+status.progress=IN PROGRESS
+
+Using this workflow to transition from
+* OPEN to CLOSED set the transition.done property to “CLOSE ISSUE”.  
+* RESOLVED to REOPENED set the transition.reopen property to “REOPEN ISSUE”.  
+
+Transition Blacklist
+The last transition property is “transition.blacklist”.  This property is used to prevent the extension from using that transition code.  For example, if your custom configuration has transition to cancel the ticket.  This can be accomplished by adding the “CANCEL ISSUE” transition code to the transition.blacklist property.  
 
 
 
