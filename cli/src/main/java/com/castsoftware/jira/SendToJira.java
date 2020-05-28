@@ -45,10 +45,6 @@ public class SendToJira {
 		
 		System.out.println("CAST2Jira v" + SendToJira.class.getPackage().getImplementationVersion() + " (c) 2017, CAST Software, All Rights Reserved" );
 
-		/*for (index = 0; index < args.length; ++index) {
-			System.out.println("args[" + index + "]: " + args[index]);
-		}*/
-
 		final Options options = createOptions();
 		OptionsValidation validation = new OptionsValidation(args);
 
