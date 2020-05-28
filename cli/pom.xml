@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>com.castsoftware.uc.cast2jira</groupId>
 		<artifactId>cast2jira</artifactId>
-		<version>1.10.0</version>
+		<version>1.10.2</version>
 	</parent>
 	<name>CastJiraConnector</name>
 	<url>http://maven.apache.org</url>

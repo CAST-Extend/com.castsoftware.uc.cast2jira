@@ -81,6 +81,7 @@ public class Constants {
     public static final String WORKFLOW_FILE = "workflow.properties";
     
     public static final String WORKFLOW_STATUS_OPEN = "status.open";
+    public static final String WORKFLOW_STATUS_REOPEN = "status.reopen";
     public static final String WORKFLOW_STATUS_DONE = "status.done";
     public static final String WORKFLOW_STATUS_PROGRESS = "status.progress";
 
@@ -88,6 +89,7 @@ public class Constants {
     public static final String WORKFLOW_TRANSITION_REOPEN = "transition.reopen";
     public static final String WORKFLOW_TRANSITION_BLACKLIST = "transition.blacklist";
 
+    public static final String WORKFLOW_DEBUG = "debug.workflow";
 
 	// Properties & log file names
 	/** The Constant LOG4J_PROPERTIES_FILE. */

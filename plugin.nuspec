@@ -2,23 +2,24 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata>
         <id>com.castsoftware.uc.cast2jira</id>
-        <version>1.5.4</version>
+        <version>1.10.2</version>
         <title>CAST AIP Action Plan to Jira Jenkins plugin</title>
         <authors>User Community</authors>
         <owners>CAST</owners>
         <licenseUrl>http://www.castsoftware.com/ps/doc/extension/license</licenseUrl>
         <projectUrl>https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira</projectUrl>
-		<releaseNotes>https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/wiki#release-history</releaseNotes>
+		<releaseNotes>https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/README.md</releaseNotes>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>The CAST AIP Action Plan to Jira Jenkins plugin is designed to allow the user to export the contents of the CAST Engineering Portal (CEP) Action Plan to Jira as a bug.</description>
-        <tags>Tools AIP Jenkins Jira</tags>
+        <tags>Tool AIP Jenkins Jira</tags>
         <dependencies>
-            <dependency id="CAIP" version="8.1.0" />
+            <dependency id="CAIP" version="8.3.6" />
         </dependencies>
     </metadata>
     <files>
 		<file src="cast2jira.zip" />
-		<file src="COPYING" />
+		<file src="README.md" />
 		<file src="COPYING.LESSER" />
+		<file src="README.MD" />
 	</files>
 </package>
