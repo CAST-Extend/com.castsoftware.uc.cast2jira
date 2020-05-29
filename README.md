@@ -43,6 +43,8 @@ This document provides installation, deployment and usage instructions for the C
 | 1.8.0 | Nevin Kaplan  | * eliminate third party AIP in favor of the Atlassian supported version<br>* reworked login to accommodate new Atlassian requirements <br>* reworked status transitions to work with SONY's standard workflow |
 | 1.9.0 | Nevin Kaplan | Security Enhancements |
 | 1.10.0 | Nevin Kaplan| * Added workflow properties<br> * various bug fixes | 
+| 1.10.1 | Nevin Kaplan| Corrected workflow issue  | 
+| 1.10.2 | Nevin Kaplan| * Converted transaction properties to comma <br> * separated lists <br> * Added debug.workflow property| 
 
 # Use Cases
 Transfer the CAST Action Plan to Jira to allow easier access by the clients development team.    
@@ -123,19 +125,23 @@ This extension is designed to work with any workflow from the Jira “Software S
 
 <ins>How it works</ins>
 
-The “workflow.properties” file is divided into two parts, status and transition.  The status section is used to identify which status the ticket can transition to. The transition tells the software how to get there.  There are only three states the issue can be transitioned to, open, in progress and done, defined as follows:
-status.open=OPEN
-status.done=CLOSED
-status.progress=IN PROGRESS
+The “workflow.properties” file is divided into two parts, status and transition.  The status section is used to identify which status the ticket can transition to. The transition tells the software how to get to that status.  There are four possible states an issue can be transitioned to:
+ 
+* status.open=OPEN
+* status.reopen=REOPENED
+* status.done=CLOSED
+* status.progress=IN PROGRESS
 
-Using this workflow to transition from
-* OPEN to CLOSED set the transition.done property to “CLOSE ISSUE”.  
-* RESOLVED to REOPENED set the transition.reopen property to “REOPEN ISSUE”.  
+The transitions properties should contain a semicolon separated list of Jira transtion codes:
 
-Transition Blacklist
-The last transition property is “transition.blacklist”.  This property is used to prevent the extension from using that transition code.  For example, if your custom configuration has transition to cancel the ticket.  This can be accomplished by adding the “CANCEL ISSUE” transition code to the transition.blacklist property.  
+* transition.done=Start Progress;done;accept issue;release issue
+* transition.reopen=reject Issue
 
+The final transition proerty is blacklist, used to prevent the extension from using that transition code.  
 
+* transition.blacklist=CANCEL 
 
+Under normal conditions if an issue does not exist in Jira and has already been marked as corrected in AIP, it will NOT be added to Jira.  The last property, debug.workflow, will add all issues to Jira, even if they are marked as corrected in AIP. When CAST2Jira is run and the debug.workflow is set to true, the issue will be added to Jira.  The next time it is run, it will attempt to close it in Jira.  
 
+All properties are case insensitive. 
 
