@@ -10,7 +10,7 @@
         <projectUrl>https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira</projectUrl>
 		<releaseNotes>https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/README.md</releaseNotes>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>The CAST AIP Action Plan to Jira Jenkins plugin is designed to allow the user to export the contents of the CAST Engineering Portal (CEP) Action Plan to Jira as a bug.</description>
+        <description>The CAST AIP Action Plan to Jira Jenkins plugin is designed to allow the user to export the contents of the CAST Engineering Dashboard (ED) Action Plan to Jira as a bug.</description>
         <tags>Tool AIP Jenkins Jira</tags>
         <dependencies>
             <dependency id="CAIP" version="8.3.6" />
