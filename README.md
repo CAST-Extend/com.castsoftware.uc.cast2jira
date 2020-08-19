@@ -115,20 +115,22 @@ java -jar CastToJira.jar <arguments ...>
 
 ### Jira Issue Customization
 The information exported to Jira can be customized by modifying the CastToJiraFieldsMapping.template file, located in the export utility installation folder.  The template consists of two parts, CAST and Jira mappings.  
-The CAST mapping section contains a list of all the CAST fields that are exported, formatted as a name-value pair, with the value being added to the Jira export.  The second part, Jira field mapping, has two fields, Summary and Description. Using them the utility knows where to put the CAST information.
+The CAST mapping section contains a list of all the CAST fields that are exported, formatted as a name-value pair, with the value being added to the Jira export.  The second part, Jira field mapping, has two fields, Summary and Description. Using them, the utility knows where to put the CAST information.
 
-Additionally, you can define how Jira custom field configurations are to be processed. At this time, the following  types of custom fields are supported:
+Additionally, in the template file, you can also define how Jira custom fields are to be processed. Please refer to [Atlassian Jira documenation](https://confluence.atlassian.com/adminjiraserver/adding-a-custom-field-938847222.html) for details on creating custom fields in Jira. 
+
+At this time, the plugin only supports the following types of custom fields:
 1. Single line text fields
 1. Multi-line text fields
 1. Dropdown lists
 
-Custom fields are typically named `customfield_99999`, in Jira. To populate values in the custom fields from the CastToJira plugin, you need to define them as required fields in Jira. Please refer to Jira documenation for details.
+**Note**: In Jira, the custom fields are typically named `customfield_99999`. 
 
 #### Setting up custom field processing
-1. From a text editor, open the CastToJiraFieldsMapping.template file for editing.
-1. Add this line in the file, to list the custom fields be auto-popluated. In this example, 3 fields are defined - `customField.names=customfield_10001;customfield_10002;customfield_10003`
-1. Next, you need to define the type of each of the custom field used. The supported types are, `text` (for text fields) and `single` (for dropdown fields). Here is an example setting for dropdown fields: `customfield_10005.type=select`
-1. If you wish to populate the text field with a value from one of the fields retrived from CAST, use the `customfield_10003.JiraField` setting. In the attached sample screenshot, Business Criteria is being assigned to `customfield_10001` and Source Code is displayed in the multi-line text field, `customfield_10002`. If you wish to display a default value instead, set a hard-coded value as in the case of `customfield_10003.label` field shown in the sample. In the case of dropdown fields, the hard-coded value needs to be one of the valid values of the dropdown field.
+1. From a text editor, open the __CastToJiraFieldsMapping.template__ file for editing.
+1. Add this line in the file, to list the custom fields to be auto-popluated. In this example, 3 custom fields are listed - `customField.names=customfield_10001;customfield_10002;customfield_10003`
+1. Next, you need to define the type of each of the custom fields used. The supported types are, `text` (for text fields) and `single` (for dropdown fields). Here is an example setting for dropdown fields: `customfield_10005.type=select`
+1. If you wish to populate the text field with a value from one of the fields retrived from CAST, use the `customfield_10003.JiraField` setting. In the attached sample screenshot, Business Criteria is being mapped to `customfield_10001` and Source Code is mapped to the multi-line text field, `customfield_10002`. If you wish to display a default value instead, set a hard-coded value as in the case of `customfield_10003.label` field shown in the sample. In the case of dropdown fields, the hard-coded value needs to be one of the valid values of the dropdown field.
 1. Save the changes to the template file.
 
 ![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/Sample_CastToJiraFieldsMappings.png)
