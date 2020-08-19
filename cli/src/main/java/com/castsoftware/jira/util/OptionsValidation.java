@@ -52,7 +52,7 @@ public class OptionsValidation {
 	 * @throws ParseException
 	 *             the parse exception
 	 */
-	public boolean getOptionsValidation(Options options) throws ParseException {
+	public boolean getOptionsValidation(Options options) throws ParseException, JiraException {
 
 		try {
 			parser = new GnuParser();
