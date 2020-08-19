@@ -6,8 +6,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.logging.Log;
@@ -39,7 +41,9 @@ public class Configuration {
 	private HashMap<String, String> fieldLabelsMap = new HashMap<String, String>(
 			0);
 
-	public Configuration() {
+	private List<CustomField> customFields;
+	
+	public Configuration() throws JiraException {
 	    loadPriorityMapping();
 	    loadWorkflow();
 	    loadCastToJiraFieldsMapping();
@@ -147,7 +151,9 @@ public class Configuration {
 	    if (new File(fname).isFile())
 	    {
 	        rslt = new FileInputStream(fname);
+	        log.info(String.format("Loading custom %s file",fname));
 	    } else {
+            log.info(String.format("Loading default %s file",fname));
 	        rslt = this.getClass().getResourceAsStream(String.format("/%s",fileName));
 	    }
 	    
@@ -177,11 +183,9 @@ public class Configuration {
 		Properties props = new Properties();
 
 		try {
-//			String priorityMappingFileName = "/" +  Constants.PRIORITY_MAPPING_FILE;
 			log.info(String.format("Priority Mapping:  %s", Constants.PRIORITY_MAPPING_FILE)); 
 			
             InputStream configStream = getPropStream(Constants.PRIORITY_MAPPING_FILE);
-//			InputStream configStream = this.getClass().getResourceAsStream(priorityMappingFileName);
 			props.load(configStream);
 			log.info(props.toString());
 			
@@ -282,13 +286,13 @@ public class Configuration {
 	
 	/**
 	 * Load cast to jira fields mapping.
+	 * @throws JiraException 
 	 */
-	private void loadCastToJiraFieldsMapping() {
+	private void loadCastToJiraFieldsMapping() throws JiraException {
 		Properties props = new Properties();
 
 		try {
-			InputStream configStream = this.getClass().getResourceAsStream(
-					"/" + Constants.CASTTOJIRA_FIELDS_MAPPING_FILE);
+			InputStream configStream = getPropStream(Constants.CASTTOJIRA_FIELDS_MAPPING_FILE);
 			props.load(configStream);
 			configStream.close();
 			
@@ -311,8 +315,42 @@ public class Configuration {
 			loadCastToJiraFieldMapping(props,Constants.FIELD_MAPPING_LABEL_LINE_START  ,Constants.FIELD_MAPPING_LABEL_LINE_START_DEFAULT_VALUE );
 			loadCastToJiraFieldMapping(props,Constants.FIELD_MAPPING_LABEL_LINE_END  ,Constants.FIELD_MAPPING_LABEL_LINE_END_DEFAULT_VALUE );
 			loadCastToJiraFieldMapping(props,Constants.FIELD_MAPPING_LABEL_TECH_CRITERIA  ,Constants.FIELD_MAPPING_LABEL_TECH_CRITERIA_DEFAULT_VALUE );
-			loadCastToJiraFieldMapping(props,Constants.FIELD_MAPPING_LABEL_BUSINESS_CRITERIA  ,Constants.FIELD_MAPPING_LABEL_BUSINESS_CRITERIA_DEFAULT_VALUE );
-			
+            loadCastToJiraFieldMapping(props,Constants.FIELD_MAPPING_LABEL_BUSINESS_CRITERIA  ,Constants.FIELD_MAPPING_LABEL_BUSINESS_CRITERIA_DEFAULT_VALUE );
+            
+            this.customFields = new ArrayList<CustomField>();
+            loadCastToJiraFieldMapping(props,Constants.FIELD_MAPPING_CUSTOM_FIELD_NAMES ,"");
+            String customFields = props.getProperty(Constants.FIELD_MAPPING_CUSTOM_FIELD_NAMES);
+            if (customFields != null)
+            {
+                for (String name: customFields.split(";"))
+                {
+                    CustomField cf = new CustomField();
+                    cf.setName(name);
+                    String typeId = String.format("%s.type", name);
+                    String type = props.getProperty(typeId,"");
+                    if (type.isEmpty())
+                    {
+                        throw new JiraException("Custom field without a type");
+                    } 
+                    cf.setType(type);
+                    if (!cf.isValidType())
+                    {
+                        throw new JiraException(String.format("Invalid custom field type %s", type));
+                    }
+                    
+                    String customFieldName = String.format("%s.label", name);
+    //                String value = props.getProperty(customFieldName);
+    //                if (value != null) {
+    //                    fieldLabelsMap.put(customFieldName,value);
+    //                }
+                    
+                    loadCastToJiraFieldMapping(props,customFieldName,"");
+                    loadCastToJiraFieldMapping(props,String.format("%s.JiraField", name),"");
+                    
+                    this.customFields.add(cf);
+                }
+            }            
+            
 			log.debug("The following Field Labels will be applied");
 
 			log.debug(Constants.FIELD_MAPPING_LABEL_OBJECT_FULL_NAME
@@ -468,9 +506,9 @@ public class Configuration {
 	 */
 	public String getCastToJiraFieldsMapping(String field) {
 		String result;
-		if (fieldLabelsMap.isEmpty()) {
-			loadCastToJiraFieldsMapping();
-		}
+//		if (fieldLabelsMap.isEmpty()) {
+//			loadCastToJiraFieldsMapping();
+//		}
 		if (!fieldLabelsMap.containsKey(field)) {
 			log.error("Field label mapping value not found ="
 					+ field
@@ -486,6 +524,17 @@ public class Configuration {
 		return result;
 	}
 
+	public List<CustomField> getCustomFields()
+	{
+	    return this.customFields;
+	}
+	
+	public String getFieldValue(String id)
+	{
+        return fieldLabelsMap.get(id);
+	}
+	
+	
 	/*
 	 * public String getJiraFields(String field) {
 	 * 
@@ -498,31 +547,35 @@ public class Configuration {
 	 * @param field
 	 *            the field
 	 * @return the jira summary fields
+	 * @throws JiraException 
 	 */
-	public String getJiraFields(String field) {
+	public String getJiraFields(String field) throws JiraException {
 
 		String result;
-		if (fieldLabelsMap.isEmpty()) {
-			loadCastToJiraFieldsMapping();
-		}
+//		if (fieldLabelsMap.isEmpty()) {
+//			loadCastToJiraFieldsMapping();
+//		}
 		if (!fieldLabelsMap.containsKey(field)) {
+		        String msg = String.format("Field label mapping value not found = %s. Review the Summary.Label property in CastToJiraFieldsMapping.template file and ensure it has a mapping. Respect Uper-Lower Cases", field);
+		        throw new JiraException(msg);
+		    
+//			if (field
+//					.equals(Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION)) {
+//				log.error("Field label mapping value not found ="
+//						+ field
+//						+ ". Review the Summary.Label property in CastToJiraFieldsMapping.template file and ensure it has a mapping. Respect Uper-Lower Cases");
+//				log.error("As Field label mapping value not found, the following will be assigned ="
+//						+ Constants.FIELD_MAPPING_SUMMARY_JIRA_ORDER_DEFAULT_VALUE);
+//				result = Constants.FIELD_MAPPING_SUMMARY_JIRA_ORDER_DEFAULT_VALUE;
+//			} else {
+//				log.error("Field label mapping value not found ="
+//						+ field
+//						+ ". Review the Description.JiraField property in CastToJiraFieldsMapping.template file and ensure it has a mapping. Respect Uper-Lower Cases");
+//				log.error("As Field label mapping value not found, the following will be assigned ="
+//						+ Constants.FIELD_MAPPING_SUMMARY_JIRA_ORDER_DEFAULT_VALUE);
+//				result = Constants.FIELD_MAPPING_SUMMARY_JIRA_ORDER_DEFAULT_VALUE;
+//			}
 
-			if (field
-					.equals(Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION)) {
-				log.error("Field label mapping value not found ="
-						+ field
-						+ ". Review the Summary.Label property in CastToJiraFieldsMapping.template file and ensure it has a mapping. Respect Uper-Lower Cases");
-				log.error("As Field label mapping value not found, the following will be assigned ="
-						+ Constants.FIELD_MAPPING_SUMMARY_JIRA_ORDER_DEFAULT_VALUE);
-				result = Constants.FIELD_MAPPING_SUMMARY_JIRA_ORDER_DEFAULT_VALUE;
-			} else {
-				log.error("Field label mapping value not found ="
-						+ field
-						+ ". Review the Description.JiraField property in CastToJiraFieldsMapping.template file and ensure it has a mapping. Respect Uper-Lower Cases");
-				log.error("As Field label mapping value not found, the following will be assigned ="
-						+ Constants.FIELD_MAPPING_SUMMARY_JIRA_ORDER_DEFAULT_VALUE);
-				result = Constants.FIELD_MAPPING_SUMMARY_JIRA_ORDER_DEFAULT_VALUE;
-			}
 		} else {
 			result = fieldLabelsMap.get(field);
 		}

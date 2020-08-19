@@ -172,7 +172,8 @@ public class Constants {
 	public static final String FIELD_MAPPING_LABEL_LINE_START = "LineStart.label";
 	public static final String FIELD_MAPPING_LABEL_LINE_END = "LineEnd.label";
 	public static final String FIELD_MAPPING_LABEL_TECH_CRITERIA = "TechCriteria.label";
-	public static final String FIELD_MAPPING_LABEL_BUSINESS_CRITERIA = "BusinessCriteria.label";
+    public static final String FIELD_MAPPING_LABEL_BUSINESS_CRITERIA = "BusinessCriteria.label";
+    public static final String FIELD_MAPPING_CUSTOM_FIELD_NAMES = "customField.names";
 
 	
 	/**

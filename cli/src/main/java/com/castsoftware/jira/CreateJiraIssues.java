@@ -2,6 +2,7 @@ package com.castsoftware.jira;
 
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -23,14 +24,17 @@ import com.atlassian.jira.rest.client.api.domain.Resolution;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.api.domain.Status;
 import com.atlassian.jira.rest.client.api.domain.Transition;
+import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldValue;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
 import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
 import com.castsoftware.jira.pojo.ActionPlanViolation;
 import com.castsoftware.jira.util.Configuration;
 import com.castsoftware.jira.util.Constants;
+import com.castsoftware.jira.util.CustomField;
 import com.castsoftware.jira.util.JiraException;
 import com.castsoftware.jira.util.JiraHelper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 /**
@@ -46,7 +50,7 @@ public class CreateJiraIssues {
     public static Log log = LogFactory.getLog(CreateJiraIssues.class);
 
     private JiraHelper jiraClient;
-//    private NullProgressMonitor progressMonitor = new NullProgressMonitor();
+    // private NullProgressMonitor progressMonitor = new NullProgressMonitor();
 
     private Project project;
     private IssueType issueType;
@@ -78,55 +82,49 @@ public class CreateJiraIssues {
     /** The total num of issues closed. */
     private int totalNumOfUnprioritizedIssues;
 
-    private List<Transition> getTransitions(Issue is) throws InterruptedException, ExecutionException 
-    {
+    private List<Transition> getTransitions(Issue is)
+            throws InterruptedException, ExecutionException {
         IssueRestClient issueClient = jiraClient.getIssueClient();
         Iterable<Transition> trns = issueClient.getTransitions(is).get();
-        
+
         List<Transition> rslt = Lists.newArrayList(trns);
-        
+
         return rslt;
     }
 
-    private Transition nextTransitionId(Issue is, List<String>whiteList, List<String>blackList) throws InterruptedException, ExecutionException, JiraException
-    {
+    private Transition nextTransitionId(Issue is, List<String> whiteList, List<String> blackList)
+            throws InterruptedException, ExecutionException, JiraException {
         List<Transition> trns = getTransitions(is);
-        
-        transition: for (Transition t: trns)
-        {
-            for (String s: blackList)
-            {
+
+        transition : for (Transition t : trns) {
+            for (String s : blackList) {
                 if (s.equalsIgnoreCase(t.getName())) {
-                    continue transition; 
+                    continue transition;
                 }
             }
-            for (String s: whiteList)
-            {
-                if (t.getName().equalsIgnoreCase(s))
-                {
-                    return t;                   
+            for (String s : whiteList) {
+                if (t.getName().equalsIgnoreCase(s)) {
+                    return t;
                 }
             }
         }
-        
-        throw new JiraException(
-                String.format("Transition not found: %s %s",whiteList.toString(), is.getStatus().getName()));
+
+        throw new JiraException(String.format("Transition not found: %s %s", whiteList.toString(),
+                is.getStatus().getName()));
     }
 
-    private boolean transitionTo(Issue is, Transition toStatus)
-    {
-        boolean rslt=false;
+    private boolean transitionTo(Issue is, Transition toStatus) {
+        boolean rslt = false;
         IssueRestClient issueClient = jiraClient.getIssueClient();
         int inProgressCode;
         try {
-            inProgressCode = getTransitionId(is.getKey(),toStatus);
-            if (inProgressCode > 0)
-            {
+            inProgressCode = getTransitionId(is.getKey(), toStatus);
+            if (inProgressCode > 0) {
                 issueClient.transition(is, new TransitionInput(inProgressCode));
-                issueClient.addComment(is.getCommentsUri(),
-                        Comment.valueOf(String.format("Issue transitioned to '%s' by CAST", toStatus.getName())));
+                issueClient.addComment(is.getCommentsUri(), Comment.valueOf(
+                        String.format("Issue transitioned to '%s' by CAST", toStatus.getName())));
                 rslt = true;
-            } 
+            }
         } catch (InterruptedException | ExecutionException e) {
             rslt = false;
         }
@@ -134,21 +132,20 @@ public class CreateJiraIssues {
     }
 
     /**
-     * Access Jira and retrieve the transition id 
+     * Access Jira and retrieve the transition id
      * 
      * @param issueKey
      * @param transitionName
-     * @return the id of the transition 
+     * @return the id of the transition
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    private int getTransitionId(String issueKey, Transition trnsId) throws ExecutionException, InterruptedException 
-    {
+    private int getTransitionId(String issueKey, Transition trnsId)
+            throws ExecutionException, InterruptedException {
         Transition rslt = null;
         IssueRestClient issueClient = jiraClient.getIssueClient();
         Issue is = issueClient.getIssue(issueKey).get();
-        
-        
+
         // if not then transition it to the "To Do" status
         Iterable<Transition> trans = issueClient.getTransitions(is).get();
         for (Transition t : trans) {
@@ -157,12 +154,11 @@ public class CreateJiraIssues {
                 break;
             }
         }
-        return rslt == null? 0 : rslt.getId();
+        return rslt == null ? 0 : rslt.getId();
     }
- 
 
     /**
-     * Method used to create and maintain Jira issues.  
+     * Method used to create and maintain Jira issues.
      * 
      * @param jiraUserName
      * @param jiraUserPassword
@@ -224,15 +220,14 @@ public class CreateJiraIssues {
 
             this.markIssueResolved = markIssueResolved;
             this.resolutionTxt = resolutionTxt;
-            
+
             String txt = "When Identified as fixed by CAST, the Jira issue will be ";
             if (markIssueResolved) {
 
                 Iterable<Resolution> resolutions;
                 boolean validResotion = false;
                 try {
-                    resolutions = jiraClient.getMetadataClient()
-                            .getResolutions().get();
+                    resolutions = jiraClient.getMetadataClient().getResolutions().get();
                     for (Resolution l : resolutions) {
                         if (l.getName().equalsIgnoreCase(this.resolutionTxt)) {
                             validResotion = true;
@@ -262,13 +257,16 @@ public class CreateJiraIssues {
          * get workflow configuration
          */
         Configuration config = new Configuration();
-        String statusOpen=config.getWorkflow(Constants.WORKFLOW_STATUS_OPEN);
-        String statusReopen=config.getWorkflow(Constants.WORKFLOW_STATUS_REOPEN);
-        String statusDone=config.getWorkflow(Constants.WORKFLOW_STATUS_DONE);
-        String statusProgress=config.getWorkflow(Constants.WORKFLOW_STATUS_PROGRESS);
-        List <String> transitionDone=Arrays.asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_DONE).split(";"));
-        List <String> transitionReopen=Arrays.asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_REOPEN).split(";"));
-        List <String> transitionBlacklist = Arrays.asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_BLACKLIST).split(";"));
+        String statusOpen = config.getWorkflow(Constants.WORKFLOW_STATUS_OPEN);
+        String statusReopen = config.getWorkflow(Constants.WORKFLOW_STATUS_REOPEN);
+        String statusDone = config.getWorkflow(Constants.WORKFLOW_STATUS_DONE);
+        String statusProgress = config.getWorkflow(Constants.WORKFLOW_STATUS_PROGRESS);
+        List<String> transitionDone = Arrays
+                .asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_DONE).split(";"));
+        List<String> transitionReopen = Arrays
+                .asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_REOPEN).split(";"));
+        List<String> transitionBlacklist = Arrays
+                .asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_BLACKLIST).split(";"));
         boolean debugWorkflow = Boolean.valueOf(config.getWorkflow(Constants.WORKFLOW_DEBUG));
 
         IssueRestClient issueClient = jiraClient.getIssueClient();
@@ -300,7 +298,7 @@ public class CreateJiraIssues {
                     if (totalIssuesFound > 0) {
                         for (BasicIssue issue : searchResult.getIssues()) {
                             Issue is = issueClient.getIssue(issue.getKey()).claim();
-                                                        
+
                             log.info(String.format("Matching Jira Issue found: %s", is.getKey()));
                             String issueStatusCode = is.getStatus().getName();
                             if (castIssueCorrected
@@ -309,77 +307,49 @@ public class CreateJiraIssues {
                                 // the same in Jira
 
                                 Transition transitTo = null;
-                                while (true)
-                                {
-                                    transitTo = nextTransitionId(is,transitionDone,transitionBlacklist);
-                                    if (!transitionTo(is, transitTo))
-                                    {
-                                        throw new JiraException(String.format("Unable to transition to %s", transitTo.getName()));
-                                    } 
-                                    
+                                while (true) {
+                                    transitTo = nextTransitionId(is, transitionDone,
+                                            transitionBlacklist);
+                                    if (!transitionTo(is, transitTo)) {
+                                        throw new JiraException(String.format(
+                                                "Unable to transition to %s", transitTo.getName()));
+                                    }
+
                                     is = issueClient.getIssue(issue.getKey()).get();
-                                    if (issueStatusCode.equals(is.getStatus().getName()) ||
-                                            statusDone.equalsIgnoreCase(is.getStatus().getName()) )
-                                    {
+                                    if (issueStatusCode.equals(is.getStatus().getName())
+                                            || statusDone
+                                                    .equalsIgnoreCase(is.getStatus().getName())) {
                                         break;
                                     }
-                                    issueStatusCode=is.getStatus().getName();
-                                }    
-/*                                
-                                transitionTo(is, "In Progress");
-                                transitionTo(is, "Done");
-                                transitionTo(is, "Accepted");
-                                if (!transitionTo(is, "Released"))
-                                {
-                                    throw new JiraException("Unable to Accept issue");
+                                    issueStatusCode = is.getStatus().getName();
                                 }
-*/                              
                                 log.info("Issue closed");
                                 this.totalNumOfIssuesClosed++;
                                 continue;
                             } else if (!castIssueCorrected
-                                    && !(issueStatusCode.equalsIgnoreCase(statusOpen) ||
-                                            issueStatusCode.equalsIgnoreCase(statusReopen) ) ) {
+                                    && !(issueStatusCode.equalsIgnoreCase(statusOpen)
+                                            || issueStatusCode.equalsIgnoreCase(statusReopen))) {
                                 // The issue is still open in CAST but marked as
                                 // closed in Jira, reopen it now
-                                
+
                                 Transition transitTo = null;
-                                while (true)
-                                {
-                                    transitTo = nextTransitionId(is,transitionReopen,transitionBlacklist);
-                                    if (!transitionTo(is, transitTo))
-                                    {
-                                        throw new JiraException(String.format("Unable to transition to %s", transitTo.getName()));
-                                    } 
-                                    
+                                while (true) {
+                                    transitTo = nextTransitionId(is, transitionReopen,
+                                            transitionBlacklist);
+                                    if (!transitionTo(is, transitTo)) {
+                                        throw new JiraException(String.format(
+                                                "Unable to transition to %s", transitTo.getName()));
+                                    }
+
                                     is = issueClient.getIssue(issue.getKey()).get();
-                                    if (issueStatusCode.equals(is.getStatus().getName()) ||
-                                            statusReopen.equalsIgnoreCase(is.getStatus().getName()) )
-                                    {
+                                    if (issueStatusCode.equals(is.getStatus().getName())
+                                            || statusReopen
+                                                    .equalsIgnoreCase(is.getStatus().getName())) {
                                         break;
                                     }
-                                    issueStatusCode=is.getStatus().getName();
-                                }    
-                                
-                                 
-//                                List<Transition> trns = getTransitions(is);
-//                                boolean status = false;
-//                                for (Transition t: trns)
-//                                {
-//                                    String tName=t.getName();
-//                                    if (tName.equalsIgnoreCase(transitionReopen))
-//                                    {
-//                                        break;
-//                                    } else if (tName.equalsIgnoreCase(wfCreate)) {
-//                                        status = transitionTo(is, wfCreate);                                        
-//                                        break;
-//                                    }
-//                                }
-//                                if (!status)
-//                                {
-//                                    
-//                                }
-                                
+                                    issueStatusCode = is.getStatus().getName();
+                                }
+
                                 this.totalNumOfIssuesReopen++;
                                 log.info("Issue Reopened");
                             } else {
@@ -410,32 +380,43 @@ public class CreateJiraIssues {
                             log.info(String.format("Adding component: [%s]", component.getName()));
                         }
 
+                        // set custom fields here
+                        List<CustomField> cfl = config.getCustomFields();
+                        if (cfl != null) {
+                            for (CustomField cf : cfl) {
+                                String jiraField = String.format("%s.JiraField", cf.getName()); 
+                                String value = getJiraFieldComposition(violation, config,jiraField);
+                                if (value != null && !value.isEmpty()) {
+                                    switch (cf.getType().toLowerCase()) {
+                                        case CustomField.CUSTOM_TEXT_FIELD_TYPE :
+                                            iib.setFieldValue(cf.getName(), value);
+                                            break;
+                                        case CustomField.CUSTOM_SELECT_FIELD_TYPE :
+                                            ComplexIssueInputFieldValue cv = ComplexIssueInputFieldValue
+                                                    .with("value", value.replace("\n", ""));
+                                            iib.setFieldValue(cf.getName(), cv);
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+
                         IssueInput issue = iib.build();
                         BasicIssue issueObj = issueClient.createIssue(issue).get();
                         log.info(String.format("New issue created: %s", issueObj.getKey()));
-                        
-                        //add comment
-                        Issue is = issueClient.getIssue(issueObj.getKey()).get();
-                        issueClient.addComment(is.getCommentsUri(),Comment.valueOf("Issue create by CAST"));                        
 
-                        // is the current status "To Do"?
-//                        Issue is = issueClient.getIssue(issueObj.getKey()).get();
-//                        Status status = is.getStatus();
-//                        List<Transition> trns = getTransitions(is);
-//                        if (!status.getName().equalsIgnoreCase(wfCreate)) {
-//                            if (!transitionTo(is, wfCreate))
-//                            {
-//                                throw new JiraException(String.format("Unable to transition to %s", wfCreate));
-//                            }
-//                            issueClient.addComment(is.getCommentsUri(),
-//                                  Comment.valueOf(String.format("Transition to '%s' by CAST",wfCreate)));                        
-//                        }
+                        // add comment
+                        Issue is = issueClient.getIssue(issueObj.getKey()).get();
+                        issueClient.addComment(is.getCommentsUri(),
+                                Comment.valueOf("Issue create by CAST"));
+
                         this.totalNumOfIssuesAdded++;
                     } else {
                         log.info("Issue has already been closed in AIP");
                     }
                 }
-            } catch (RestClientException | JiraException | InterruptedException | ExecutionException ex) {
+            } catch (RestClientException | JiraException | InterruptedException
+                    | ExecutionException ex) {
                 this.totalNumOfIssuesNotAddedByError++;
                 log.error(ex.getMessage());
             }
@@ -487,17 +468,26 @@ public class CreateJiraIssues {
      * @param fieldType
      *            the field type
      * @return the jira field composition
+     * @throws JiraException 
      */
     public String getJiraFieldComposition(ActionPlanViolation temp, Configuration fieldmap,
-            String fieldType) {
+            String fieldType) throws JiraException {
         String field = new String();
-        String fields;
-        if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION)) {
-            fields = fieldmap.getJiraFields(Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION);
+        String fields=null;
+        
+        if (fieldType.endsWith(".JiraField"))
+        {
+            fields = fieldmap.getJiraFields(fieldType);
         } else {
-            fields = fieldmap
-                    .getJiraFields(Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION);
+            return "";
         }
+//        if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION)) {
+//            fields = fieldmap.getJiraFields(Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION);
+//        } else {
+//            fields = fieldmap
+//                    .getJiraFields(Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION);
+//        }
+        
         StringBuilder result = new StringBuilder();
         StringTokenizer tokens = new StringTokenizer(fields, ";");
 
@@ -559,6 +549,21 @@ public class CreateJiraIssues {
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_BUSINESS_CRITERIA)) {
                     result.append(temp.getBusinessCriteria());
                 }
+                
+                // check custom fields 
+                List<CustomField> cfl = fieldmap.getCustomFields();
+                if (cfl != null) {
+                    for (CustomField cf: cfl)
+                    {
+                        String name=String.format("%s.label",cf.getName());
+                        if (field.equals(name)) {
+                            String value = fieldmap.getFieldValue(name);
+                            result.append(value);
+                        }
+                    }
+                }
+                
+                
                 /**
                  * do we add a space or carriage return - Summary field gets a
                  * space - Description field get a carriage return
@@ -613,7 +618,8 @@ public class CreateJiraIssues {
     }
 
     /**
-     * Return the total number of issues retrieved from CAST 
+     * Return the total number of issues retrieved from CAST
+     * 
      * @return
      */
     public int getTotalNumOfIssues() {
@@ -630,8 +636,9 @@ public class CreateJiraIssues {
     }
 
     /**
-     * return the total number of errors encountered
-     * while attempting to add an issue
+     * return the total number of errors encountered while attempting to add an
+     * issue
+     * 
      * @return
      */
     public int getTotalNumOfIssuesNotAddedByError() {
@@ -639,8 +646,8 @@ public class CreateJiraIssues {
     }
 
     /**
-     * The number of issue that have already exist and were not 
-     * added to Jira
+     * The number of issue that have already exist and were not added to Jira
+     * 
      * @return
      */
     public int getTotalNumOfIssuesNotAddedByExist() {
@@ -658,6 +665,7 @@ public class CreateJiraIssues {
 
     /**
      * field not being used?
+     * 
      * @return
      */
     public int getTotalNumOfUnprioritizedIssues() {
