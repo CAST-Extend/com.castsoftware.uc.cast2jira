@@ -128,8 +128,7 @@ Custom fields are typically named `customfield_99999`, in Jira. To populate valu
 1. From a text editor, open the CastToJiraFieldsMapping.template file for editing.
 1. Add this line in the file, to list the custom fields be auto-popluated. In this example, 3 fields are defined - `customField.names=customfield_10001;customfield_10002;customfield_10003`
 1. Next, you need to define the type of each of the custom field used. The supported types are, `text` (for text fields) and `single` (for dropdown fields). Here is an example setting for dropdown fields: `customfield_10005.type=select`
-1. If you wish to populate the text field with a value from one of the fields retrived from CAST, use the `customfield_10003.JiraField` setting. In the attached sample screenshot, Business Criteria is being assigned to `customfield_10001` and Source Code is displayed in the multi-line text field, `customfield_10002`.
-1. If you wish to display a default value instead, set a hard-coded value as in, `customfield_10003.label=Test`. In the case of dropdown fields, the hard-coded value needs to be one of the valid values of the dropdown field.
+1. If you wish to populate the text field with a value from one of the fields retrived from CAST, use the `customfield_10003.JiraField` setting. In the attached sample screenshot, Business Criteria is being assigned to `customfield_10001` and Source Code is displayed in the multi-line text field, `customfield_10002`. If you wish to display a default value instead, set a hard-coded value as in the case of `customfield_10003.label` field shown in the sample. In the case of dropdown fields, the hard-coded value needs to be one of the valid values of the dropdown field.
 1. Save the changes to the template file.
 
 ![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/Sample_CastToJiraFieldsMappings.png)
