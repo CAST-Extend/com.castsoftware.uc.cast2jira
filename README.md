@@ -115,9 +115,24 @@ java -jar CastToJira.jar <arguments ...>
 
 ### Jira Issue Customization
 The information exported to Jira can be customized by modifying the CastToJiraFieldsMapping.template file, located in the export utility installation folder.  The template consists of two parts, CAST and Jira mappings.  
-The CAST mapping section contains a list of all the CAST fields that are exported, formatted as a name value pair, with the value being added to the Jira export.  The second part, Jira field mapping has two fields, Summary and Description. Using them the utility knows where to put the cast information.  
+The CAST mapping section contains a list of all the CAST fields that are exported, formatted as a name-value pair, with the value being added to the Jira export.  The second part, Jira field mapping, has two fields, Summary and Description. Using them the utility knows where to put the CAST information.
 
-![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/custome.png)
+Additionally, you can define how Jira custom field configurations are to be processed. At this time, the following  types of custom fields are supported:
+1. Single line text fields
+1. Multi-line text fields
+1. Dropdown lists
+
+Custom fields are typically named `customfield_99999`, in Jira. To populate values in the custom fields from the CastToJira plugin, you need to define them as required fields in Jira. Please refer to Jira documenation for details.
+
+#### Setting up custom field processing
+1. From a text editor, open the CastToJiraFieldsMapping.template file for editing.
+1. Add this line in the file, to list the custom fields be auto-popluated. In this example, 3 fields are defined - `customField.names=customfield_10001;customfield_10002;customfield_10003`
+1. Next, you need to define the type of each of the custom field used. The supported types are, `text` (for text fields) and `single` (for dropdown fields). Here is an example setting for dropdown fields: `customfield_10005.type=select`
+1. If you wish to populate the text field with a value from one of the fields retrived from CAST, use the `customfield_10003.JiraField` setting. In the attached sample screenshot, Business Criteria is being assigned to `customfield_10001` and Source Code is displayed in the multi-line text field, `customfield_10002`.
+1. If you wish to display a default value instead, set a hard-coded value as in, `customfield_10003.label=Test`. In the case of dropdown fields, the hard-coded value needs to be one of the valid values of the dropdown field.
+1. Save the changes to the template file.
+
+![](https://github.com/CAST-Extend/com.castsoftware.uc.cast2jira/blob/master/img/Sample_CastToJiraFieldsMappings.png)
 
 ### Using A Custom Jira Workflow
 This extension is designed to work with any workflow from the Jira “Software Simplified Workflow” to your custom workflow.  There is no additional configuration required if you are using the Classic Jira workflow.  To configure the extension to work any other workflow update the “workflow.properties”.   This file is provided in the installation package and should have been installed in the same folder as CAST2Jira.jar file.       
