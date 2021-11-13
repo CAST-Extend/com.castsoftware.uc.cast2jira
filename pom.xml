@@ -11,6 +11,7 @@
     <name>CAST2Jira Parent Project</name>
 
     <modules>
+        <!--module>jira-client</module-->
         <module>cli</module>
         <module>jenkins</module>
     </modules>
