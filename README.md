@@ -46,6 +46,7 @@ This document provides installation, deployment and usage instructions for the C
 | 1.10.1 | Nevin Kaplan| Corrected workflow issue  | 
 | 1.10.2 | Nevin Kaplan| * Converted transaction properties to comma <br> * separated lists <br> * Added debug.workflow property| 
 | 1.10.3 | Nevin Kaplan|* Aligned versions <br>*replace crupt jar file | 
+| 1.11.0 | Nevin Kaplan | Updated library pacakage version to remove CVE's|
 
 # Use Cases
 Transfer the CAST Action Plan to Jira to allow easier access by the clients development team.    
