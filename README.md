@@ -21,6 +21,7 @@ This document is to be used by the CAST Delivery Specialist or onsite administra
 ## Summary
 This document provides installation, deployment and usage instructions for the CAST to Jira Extension.  
 
+<a name="releaseinfo">
 # Release History 
 ### CastToJira CLI
 | Version  | Author | Description |
@@ -47,6 +48,7 @@ This document provides installation, deployment and usage instructions for the C
 | 1.10.2 | Nevin Kaplan| * Converted transaction properties to comma <br> * separated lists <br> * Added debug.workflow property| 
 | 1.10.3 | Nevin Kaplan|* Aligned versions <br>*replace crupt jar file | 
 | 1.11.0 | Nevin Kaplan | Updated library pacakage version to remove CVE's|
+</a>
 
 # Use Cases
 Transfer the CAST Action Plan to Jira to allow easier access by the clients development team.    
