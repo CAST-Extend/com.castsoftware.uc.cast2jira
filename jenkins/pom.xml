@@ -21,7 +21,7 @@
 		<jackson.version>2.4.4</jackson.version-->
 		<findbugs.skip>true</findbugs.skip>
 		<maven.javadoc.skip>true</maven.javadoc.skip>
-		<InjectedTest
+
 	</properties>
 	<name>CAST to Jira Interface</name>
 	<!-- The default licence for Jenkins OSS Plugins is MIT. Substitute for 

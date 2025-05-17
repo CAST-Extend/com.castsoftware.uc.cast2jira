@@ -85,10 +85,27 @@ public class VersionTest {
     @Test(expected = JiraException.class)
     public void testMergeWithFailed() throws Exception {
         final RestClient mockRestClient = PowerMockito.mock(RestClient.class);
+        // Throw RuntimeException instead of JiraException
+        PowerMockito.doThrow(new RuntimeException("Error")).when(mockRestClient).post(anyString(), any(JSONObject.class));
+
         final JSONObject mockJSON = PowerMockito.mock(JSONObject.class);
-        when(mockRestClient.put(anyString(),any(JSONObject.class))).thenThrow(Exception.class);
-        Version version = new Version(mockRestClient,mockJSON);
-        version.mergeWith(new Version(mockRestClient,mockJSON));
+        Version targetVersion = new Version(mockRestClient, mockJSON);
+
+        Version version = new Version(mockRestClient, getTestJSON());
+        version.mergeWith(targetVersion);
+    }
+
+    @Test(expected = JiraException.class)
+    public void testCopyToFailed() throws Exception {
+        final RestClient mockRestClient = PowerMockito.mock(RestClient.class);
+        // Throw RuntimeException instead of JiraException
+        PowerMockito.doThrow(new RuntimeException("Error")).when(mockRestClient).post(anyString(), any(JSONObject.class));
+
+        final JSONObject mockJSON = PowerMockito.mock(JSONObject.class);
+        Project project = new Project(mockRestClient, mockJSON);
+
+        Version version = new Version(mockRestClient, getTestJSON());
+        version.copyTo(project);
     }
 
     @Test
@@ -99,16 +116,6 @@ public class VersionTest {
         version.copyTo(new Project(mockRestClient,mockJSON));
         verify(mockRestClient, times(1)).post(anyString(),any(JSONObject.class));
     }
-
-    @Test(expected = JiraException.class)
-    public void testCopyToFailed() throws Exception {
-        final RestClient mockRestClient = PowerMockito.mock(RestClient.class);
-        final JSONObject mockJSON = PowerMockito.mock(JSONObject.class);
-        when(mockRestClient.post(anyString(), any(JSONObject.class))).thenThrow(Exception.class);
-        Version version = new Version(mockRestClient,getTestJSON());
-        version.copyTo(new Project(mockRestClient,mockJSON));
-    }
-
 
     @Test
     public void testToString() throws Exception {

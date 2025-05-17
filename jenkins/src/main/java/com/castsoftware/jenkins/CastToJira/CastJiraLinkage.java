@@ -42,6 +42,7 @@ public class CastJiraLinkage extends AbstractDescribableImpl<CastJiraLinkage>
 
 		public DescriptorImpl()
 		{
+			this.name = "CastJiraLinkage"; // or any appropriate value
 			load();
 		}
 

@@ -80,10 +80,10 @@ public class UserTest {
 
     @Test(expected = JiraException.class)
     public void testGetUserRestError() throws Exception {
-
         final RestClient restClient = PowerMockito.mock(RestClient.class);
-        when(restClient.get(anyString(),anyMap())).thenThrow(Exception.class);
-       User.get(restClient, "username");
+        // Simulate a runtime exception, which User.get() should wrap/convert to JiraException
+        PowerMockito.doThrow(new RuntimeException("message")).when(restClient).get(anyString(), anyMap());
+        User.get(restClient, "username");
     }
 
     @Test

@@ -28,6 +28,7 @@ public class RestException extends Exception {
 
     private int status;
     private String result;
+    private org.apache.http.Header[] headers;
 
     public RestException(String msg, int status, String result) {
         super(msg);
@@ -36,12 +37,24 @@ public class RestException extends Exception {
         this.result = result;
     }
 
+    public RestException(String msg, int status, String result, org.apache.http.Header[] headers) {
+        super(msg);
+        
+        this.status = status;
+        this.result = result;
+        this.headers = headers;
+    }
+
     public int getHttpStatusCode() {
         return status;
     }
 
     public String getHttpResult() {
         return result;
+    }
+
+    public org.apache.http.Header[] getHeaders() {
+        return headers;
     }
 
     public String getMessage() {

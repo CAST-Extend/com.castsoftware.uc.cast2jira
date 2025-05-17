@@ -8,7 +8,7 @@
 	<f:section title="CAST Database Connection Setup">
  	   <f:entry name="useDatabase" title="Select Database:" field="useDatabase">
 		<select name="useDatabase">
-			<j:forEach var="type" items="CSS, Oracle,SQLServer">
+			<j:forEach var="type" items="CSS/Postgres, Oracle,SQLServer">
 				<f:option selected="${type==instance.getUseDatabase()}" value="${type}">${type}</f:option>
 			</j:forEach>
 		</select>

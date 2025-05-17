@@ -132,6 +132,12 @@ public class DatabaseConnection {
 			// jdbc:jtds:<server_type>://<server>[:<port>][/<database>][;<property>=<value>[;...]]
 			// jdbc:jtds:sqlserver://neptune.acme.com:1433/test
 
+			//Added by AKU 
+			// Append PostgreSQL connection parameters to support AWS RDS SCRAM auth
+        	if (getDatabaseProvider().equalsIgnoreCase(Constants.DB_CSS)) {
+              connectionString.append("?ssl=true&gssEncMode=disable");
+        	}
+
 			if (log.isDebugEnabled())
 			{
 				log.debug("setCreateDBConnection() - Connection String: "

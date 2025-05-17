@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -562,7 +563,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
         }
 
         @Override
-        public CastJiraConnectorBuilder newInstance(StaplerRequest req, JSONObject formData) {
+        public CastJiraConnectorBuilder newInstance(@Nonnull StaplerRequest req, JSONObject formData) {
             return req.bindJSON(CastJiraConnectorBuilder.class, formData);
         }
 
@@ -586,19 +587,17 @@ public class CastJiraConnectorBuilder extends Builder // implements
             ListBoxModel m = new ListBoxModel();
             m.add("");
             DatabaseConnection conn = null;
-
-            Secret password = hudson.util.Secret.decrypt(castUserPassword);
-
             if (databaseHost != null && databaseName != null && databasePort != null
                     && castUserName != null && castUserPassword != null) {
                 try {
                     conn = new DatabaseConnection(castUserName, castUserPassword, databaseHost,
                             databaseName, databasePort, useDatabase);
                     String sql = "select schema_name from information_schema.schemata where schema_name like '%_central' order by schema_name";
-                    PreparedStatement pst = conn.getDBConnection().prepareStatement(sql);
-                    ResultSet rs = pst.executeQuery();
-                    while (rs.next()) {
-                        m.add(rs.getString("schema_name"));
+                    try (PreparedStatement pst = conn.getDBConnection().prepareStatement(sql);
+                         ResultSet rs = pst.executeQuery()) {
+                        while (rs.next()) {
+                            m.add(rs.getString("schema_name"));
+                        }
                     }
                 } catch (SQLException e) {
                     return m;
@@ -622,7 +621,6 @@ public class CastJiraConnectorBuilder extends Builder // implements
         ) {
             ListBoxModel m = new ListBoxModel();
             DatabaseConnection conn = null;
-
             if (databaseHost != null && databaseName != null && databasePort != null
                     && castUserName != null && castUserPassword != null && schemaName != null) {
                 try {
@@ -630,10 +628,11 @@ public class CastJiraConnectorBuilder extends Builder // implements
                             databaseName, databasePort, useDatabase);
                     String sql = new StringBuffer().append("select distinct app_name from ")
                             .append(schemaName).append(".csv_portf_tree").toString();
-                    PreparedStatement pst = conn.getDBConnection().prepareStatement(sql);
-                    ResultSet rs = pst.executeQuery();
-                    while (rs.next()) {
-                        m.add(rs.getString("app_name"));
+                    try (PreparedStatement pst = conn.getDBConnection().prepareStatement(sql);
+                         ResultSet rs = pst.executeQuery()) {
+                        while (rs.next()) {
+                            m.add(rs.getString("app_name"));
+                        }
                     }
                 } catch (SQLException e) {
                     return m;
@@ -769,7 +768,6 @@ public class CastJiraConnectorBuilder extends Builder // implements
             if (databaseHost.isEmpty())
                 return FormValidation.error("Please fill-in the database host");
             if (databaseName.isEmpty())
-                return FormValidation.error("Please fill-in the database name");
             if (databasePort.isEmpty())
                 return FormValidation.error("Please fill-in the database port");
             try {
@@ -866,17 +864,11 @@ public class CastJiraConnectorBuilder extends Builder // implements
         }
 
         @Override
-        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            jiraExportLoc = formData.getString("jiraExportLoc");
-            useResolution = (JSONObject) formData.getJSONObject("useResolution");
-            if (!useResolution.isNullObject()) {
-                resolution = useResolution.getString("resolution");
-            } else {
-                resolution = null;
-            }
-
+        public boolean configure(@Nonnull StaplerRequest req, JSONObject formData) throws FormException
+        {
+            req.bindJSON(this, formData);
             save();
-            return super.configure(req, formData);
+            return true;
         }
 
         public String getJiraExportLoc() {
