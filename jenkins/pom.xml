@@ -16,7 +16,7 @@
 	<packaging>hpi</packaging>
 	<properties>
 		<!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
-		<jenkins.version>2.479.3</jenkins.version>
+		<jenkins.version>2.492.3</jenkins.version>
 		<findbugs.skip>true</findbugs.skip>
 		<maven.javadoc.skip>true</maven.javadoc.skip>
 	</properties>
