@@ -1,6 +1,5 @@
 package com.castsoftware.jira;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
@@ -24,7 +23,7 @@ public class GetCastActionPlan {
 	public static Log log = LogFactory.getLog(GetCastActionPlan.class);
 
 	/** The map. */
-	private HashMap<Integer, ActionPlanViolation> map = new HashMap<Integer, ActionPlanViolation>(
+	private HashMap<Integer, ActionPlanViolation> map = new HashMap<>(
 			0);
 
 	/** The appname. */
