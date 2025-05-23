@@ -1,30 +1,20 @@
 Build the entire project with Maven
 mvn clean install
-mvn clean install -DskipTests
+mvn clean install 
+
 OR Build Individual Project 
 
-1. 
-# Build the CLI tool
+# 1. Build the CLI tool
 cd cli
 mvn clean install
 
-2. 
-# Build the Jenkins plugin
+# 2. Build the Jenkins plugin
 cd jenkins
 mvn clean install
 
-3.
-# Build the Jira client library
-cd jira-client
-mvn clean install
+# 3. After building: 
 
-
-
-
-
-After building: 
-
-Testing the CLI Tool:
+## Testing the CLI Tool:
 
 java -jar cli/target/CastToJira.jar -applicationname "YourAppName" \
   -castusername "YourCastUsername" \
@@ -41,7 +31,7 @@ java -jar cli/target/CastToJira.jar -applicationname "YourAppName" \
   -jirauserpassword "YourJiraPassword"
 
 
-  Testing the Jenkins Plugin:
+  ## Testing the Jenkins Plugin:
   1. Build the Jenkins plugin:
     cd jenkins
     mvn clean package
