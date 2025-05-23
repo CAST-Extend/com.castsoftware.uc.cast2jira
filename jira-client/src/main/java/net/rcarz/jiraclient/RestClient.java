@@ -17,41 +17,33 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of httpclient5 and Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
-import net.sf.json.JSONSerializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.http.Header;
-import org.apache.http.HeaderElement;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.StatusLine;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.ByteArrayBody;
-import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.entity.mime.content.InputStreamBody;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.*;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpDelete;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.core5.net.URIBuilder;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.Map;
 
 /**
@@ -59,9 +51,10 @@ import java.util.Map;
  */
 public class RestClient {
 
-    private HttpClient httpClient = null;
-    private ICredentials creds = null;
-    private URI uri = null;
+    private final CloseableHttpClient httpClient;
+    private final ICredentials creds;
+    private final URI uri;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     /**
      * Creates a REST client instance with a URI.
@@ -69,7 +62,7 @@ public class RestClient {
      * @param httpclient Underlying HTTP client to use
      * @param uri Base URI of the remote REST service
      */
-    public RestClient(HttpClient httpclient, URI uri) {
+    public RestClient(CloseableHttpClient httpclient, URI uri) {
         this(httpclient, null, uri);
     }
 
@@ -80,14 +73,8 @@ public class RestClient {
      * @param creds Credentials to send with each request
      * @param uri Base URI of the remote REST service
      */
-    public RestClient(HttpClient httpclient, ICredentials creds, URI uri) {
-        this.httpClient = httpclient;       
-        // try {
-        //     // same code
-        // } catch (IOException ex) {
-        //     // exception handling
-        // }
-        // // Remove the UnsupportedEncodingException catch block
+    public RestClient(CloseableHttpClient httpclient, ICredentials creds, URI uri) {
+        this.httpClient = httpclient;
         this.creds = creds;
         this.uri = uri;
     }
@@ -106,7 +93,7 @@ public class RestClient {
     }
 
     /**
-     * Build a URI from a path and query parmeters.
+     * Build a URI from a path and query parameters.
      *
      * @param path Path to append to the base URI
      * @param params Map of key value pairs
@@ -117,6 +104,9 @@ public class RestClient {
      */
     public URI buildURI(String path, Map<String, String> params) throws URISyntaxException {
         URIBuilder ub = new URIBuilder(uri);
+        String basePath = ub.getPath();
+        if (!basePath.endsWith("/")) basePath += "/";
+        if (path.startsWith("/")) path = path.substring(1);
         ub.setPath(ub.getPath() + path);
 
         if (params != null) {
@@ -127,66 +117,61 @@ public class RestClient {
         return ub.build();
     }
 
-    private JSON request(HttpRequestBase req) throws RestException, IOException {
+    private JsonNode request(HttpUriRequestBase req) throws RestException, IOException {
         req.addHeader("Accept", "application/json");
 
         if (creds != null)
             creds.authenticate(req);
 
-        HttpResponse resp = httpClient.execute(req);
-        HttpEntity ent = resp.getEntity();
-        StringBuilder result = new StringBuilder();
+        try (CloseableHttpResponse resp = httpClient.execute(req)) {
+            HttpEntity ent = resp.getEntity();
+            StringBuilder result = new StringBuilder();
 
-        if (ent != null) {
-            String encoding = null;
-            if (ent.getContentEncoding() != null) {
-            	encoding = ent.getContentEncoding().getValue();
-            }
-            
-            if (encoding == null) {
-    	        Header contentTypeHeader = resp.getFirstHeader("Content-Type");
-    	        HeaderElement[] contentTypeElements = contentTypeHeader.getElements();
-    	        for (HeaderElement he : contentTypeElements) {
-    	        	NameValuePair nvp = he.getParameterByName("charset");
-    	        	if (nvp != null) {
-    	        		encoding = nvp.getValue();
-    	        	}
-    	        }
-            }
-            
-            InputStreamReader isr =  encoding != null ?
-                new InputStreamReader(ent.getContent(), encoding) :
-                new InputStreamReader(ent.getContent());
-            BufferedReader br = new BufferedReader(isr);
-            String line = "";
+            if (ent != null) {
+                Header contentEncodingHeader = resp.getFirstHeader("Content-Encoding");
+                String encoding = contentEncodingHeader != null ? contentEncodingHeader.getValue() : null;
 
-            while ((line = br.readLine()) != null) {
-                result.append(line);
+                if (encoding == null) {
+                    Charset charset = null;
+                    Header contentTypeHeader = resp.getFirstHeader("Content-Type");
+                    if (contentTypeHeader != null) {
+                        ContentType contentType = ContentType.parse(contentTypeHeader.getValue());
+                        charset = contentType.getCharset();
+                        if (charset != null) {
+                            encoding = charset.name();
+                        }
+                    }
+                }
+
+                try (InputStreamReader isr = encoding != null ?
+                        new InputStreamReader(ent.getContent(), encoding) :
+                        new InputStreamReader(ent.getContent());
+                     BufferedReader br = new BufferedReader(isr);) {
+                    String line = "";
+
+                    while ((line = br.readLine()) != null) {
+                        result.append(line);
+                    }
+                }
             }
 
-            isr.close();
-            br.close();
-            isr=null;
-            br=null;
+            if (resp.getCode() >= 300)
+                throw new RestException(resp.getReasonPhrase(), resp.getCode(), result.toString(), resp.getHeaders());
+
+            if (ent == null) return null;
+
+            try (InputStream contentStream = ent.getContent()) {
+                return MAPPER.readTree(contentStream);
+            }
         }
-        EntityUtils.consumeQuietly(ent);
-
-        StatusLine sl = resp.getStatusLine();
-
-        if (sl.getStatusCode() >= 300)
-            throw new RestException(sl.getReasonPhrase(), sl.getStatusCode(), result.toString(), resp.getAllHeaders());
-
-        return result.length() > 0 ? JSONSerializer.toJSON(result.toString()): null;
     }
 
-    private JSON request(HttpEntityEnclosingRequestBase req, String payload)
+    private JsonNode request(ClassicHttpRequest req, String payload)
         throws RestException, IOException {
 
         if (payload != null) {
             // Remove the try-catch and just create the entity directly
-            StringEntity ent = new StringEntity(payload, "UTF-8");
-            ent.setContentType("application/json");
-            
+            StringEntity ent = new StringEntity(payload, ContentType.create("application/json", "UTF-8"));
             req.addHeader("Content-Type", "application/json");
             req.setEntity(ent);
         }
@@ -194,32 +179,33 @@ public class RestClient {
         return request(req);
     }
     
-    private JSON request(HttpEntityEnclosingRequestBase req, File file)
+    private JsonNode request(ClassicHttpRequest req, File file)
         throws RestException, IOException {
         if (file != null) {
             File fileUpload = file;
             req.setHeader("X-Atlassian-Token", "nocheck");
-            MultipartEntity ent = new MultipartEntity();
-            ent.addPart("file", new FileBody(fileUpload));
+            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+            builder.addBinaryBody("file", fileUpload, ContentType.DEFAULT_BINARY, fileUpload.getName());
+            HttpEntity ent = builder.build();
             req.setEntity(ent);
         }
         return request(req);
     }
 
-    private JSON request(HttpEntityEnclosingRequestBase req, Issue.NewAttachment... attachments)
+    private JsonNode request(ClassicHttpRequest req, Issue.NewAttachment... attachments)
         throws RestException, IOException {
         if (attachments != null) {
             req.setHeader("X-Atlassian-Token", "nocheck");
-            MultipartEntity ent = new MultipartEntity();
+            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
             for(Issue.NewAttachment attachment : attachments) {
                 String filename = attachment.getFilename();
                 Object content = attachment.getContent();
                 if (content instanceof byte[]) {
-                    ent.addPart("file", new ByteArrayBody((byte[]) content, filename));
+                    builder.addBinaryBody("file", (byte[]) content, ContentType.DEFAULT_BINARY, filename);
                 } else if (content instanceof InputStream) {
-                    ent.addPart("file", new InputStreamBody((InputStream) content, filename));
+                    builder.addBinaryBody("file", (InputStream) content, ContentType.DEFAULT_BINARY, filename);
                 } else if (content instanceof File) {
-                    ent.addPart("file", new FileBody((File) content, filename));
+                    builder.addBinaryBody("file", (File) content, ContentType.DEFAULT_BINARY, filename);
                 } else if (content == null) {
                     throw new IllegalArgumentException("Missing content for the file " + filename);
                 } else {
@@ -228,15 +214,22 @@ public class RestClient {
                             content.getClass().getName() + " for the file " + filename);
                 }
             }
+            HttpEntity ent = builder.build();
             req.setEntity(ent);
         }
         return request(req);
     }
 
-    private JSON request(HttpEntityEnclosingRequestBase req, JSON payload)
+    private JsonNode request(ClassicHttpRequest req, JsonNode payload)
         throws RestException, IOException {
 
-        return request(req, payload != null ? payload.toString() : null);
+        if (payload != null) {
+            String jsonString = MAPPER.writeValueAsString(payload);
+            StringEntity ent = new StringEntity(jsonString, ContentType.APPLICATION_JSON);
+            req.addHeader("Content-Type", "application/json");
+            req.setEntity(ent);
+        }
+        return request(req);
     }
 
     /**
@@ -249,7 +242,7 @@ public class RestClient {
      * @throws RestException when an HTTP-level error occurs
      * @throws IOException when an error reading the response occurs
      */
-    public JSON delete(URI uri) throws RestException, IOException {
+    public JsonNode delete(URI uri) throws RestException, IOException {
         return request(new HttpDelete(uri));
     }
 
@@ -264,7 +257,7 @@ public class RestClient {
      * @throws IOException when an error reading the response occurs
      * @throws URISyntaxException when an error occurred appending the path to the URI
      */
-    public JSON delete(String path) throws RestException, IOException, URISyntaxException {
+    public JsonNode delete(String path) throws RestException, IOException, URISyntaxException {
         return delete(buildURI(path));
     }
 
@@ -278,7 +271,7 @@ public class RestClient {
      * @throws RestException when an HTTP-level error occurs
      * @throws IOException when an error reading the response occurs
      */
-    public JSON get(URI uri) throws RestException, IOException {
+    public JsonNode get(URI uri) throws RestException, IOException {
         return request(new HttpGet(uri));
     }
 
@@ -294,7 +287,7 @@ public class RestClient {
      * @throws IOException when an error reading the response occurs
      * @throws URISyntaxException when an error occurred appending the path to the URI
      */
-    public JSON get(String path, Map<String, String> params) throws RestException, IOException, URISyntaxException {
+    public JsonNode get(String path, Map<String, String> params) throws RestException, IOException, URISyntaxException {
         return get(buildURI(path, params));
     }
 
@@ -309,7 +302,7 @@ public class RestClient {
      * @throws IOException when an error reading the response occurs
      * @throws URISyntaxException when an error occurred appending the path to the URI
      */
-    public JSON get(String path) throws RestException, IOException, URISyntaxException {
+    public JsonNode get(String path) throws RestException, IOException, URISyntaxException {
         return get(path, null);
     }
 
@@ -325,7 +318,7 @@ public class RestClient {
      * @throws RestException when an HTTP-level error occurs
      * @throws IOException when an error reading the response occurs
      */
-    public JSON post(URI uri, JSON payload) throws RestException, IOException {
+    public JsonNode post(URI uri, JsonNode payload) throws RestException, IOException {
         return request(new HttpPost(uri), payload);
     }
 
@@ -337,7 +330,7 @@ public class RestClient {
      * Content-Type header. You should not use this function when proper JSON
      * is expected.
      *
-     * @see https://jira.atlassian.com/browse/JRA-29304
+     * @see <a href="https://jira.atlassian.com/browse/JRA-29304">https://jira.atlassian.com/browse/JRA-29304</a>
      *
      * @param uri Full URI of the remote endpoint
      * @param payload Raw string to send to the remote service
@@ -347,12 +340,13 @@ public class RestClient {
      * @throws RestException when an HTTP-level error occurs
      * @throws IOException when an error reading the response occurs
      */
-    public JSON post(URI uri, String payload) throws RestException, IOException {
-    	String quoted = null;
-    	if(payload != null && !payload.equals(new JSONObject())){
-    		quoted = String.format("\"%s\"", payload);
+    public JsonNode post(URI uri, String payload) throws RestException, IOException {
+    	if(payload == null) {
+            // No payload, just send empty POST
+            return request(new HttpPost(uri), (String) null);
     	}
-        return request(new HttpPost(uri), quoted);
+        // Send payload as is (assumed to be valid JSON or the server expects raw string)
+        return request(new HttpPost(uri), payload);
     }
 
     /**
@@ -367,7 +361,7 @@ public class RestClient {
      * @throws IOException when an error reading the response occurs
      * @throws URISyntaxException when an error occurred appending the path to the URI
      */
-    public JSON post(String path, JSON payload)
+    public JsonNode post(String path, JsonNode payload)
         throws RestException, IOException, URISyntaxException {
 
         return post(buildURI(path), payload);
@@ -384,10 +378,11 @@ public class RestClient {
      * @throws IOException when an error reading the response occurs
      * @throws URISyntaxException when an error occurred appending the path to the URI
      */
-    public JSON post(String path)
+    public JsonNode post(String path)
         throws RestException, IOException, URISyntaxException {
-    	
-        return post(buildURI(path), new JSONObject());
+
+        // Send an empty JSON object as payload using Jackson's ObjectMapper
+        return post(buildURI(path), MAPPER.createObjectNode());
     }
     
     /**
@@ -400,7 +395,7 @@ public class RestClient {
      * @throws IOException 
      * @throws RestException 
      */
-    public JSON post(String path, File file) throws RestException, IOException, URISyntaxException{
+    public JsonNode post(String path, File file) throws RestException, IOException, URISyntaxException{
         return request(new HttpPost(buildURI(path)), file);
     }
 
@@ -414,7 +409,7 @@ public class RestClient {
      * @throws IOException
      * @throws RestException
      */
-    public JSON post(String path, Issue.NewAttachment... attachments)
+    public JsonNode post(String path, Issue.NewAttachment... attachments)
         throws RestException, IOException, URISyntaxException
     {
         return request(new HttpPost(buildURI(path)), attachments);
@@ -431,7 +426,7 @@ public class RestClient {
      * @throws RestException when an HTTP-level error occurs
      * @throws IOException when an error reading the response occurs
      */
-    public JSON put(URI uri, JSON payload) throws RestException, IOException {
+    public JsonNode put(URI uri, JsonNode payload) throws RestException, IOException {
         return request(new HttpPut(uri), payload);
     }
 
@@ -447,7 +442,7 @@ public class RestClient {
      * @throws IOException when an error reading the response occurs
      * @throws URISyntaxException when an error occurred appending the path to the URI
      */
-    public JSON put(String path, JSON payload)
+    public JsonNode put(String path, JsonNode payload)
         throws RestException, IOException, URISyntaxException {
 
         return put(buildURI(path), payload);
@@ -458,8 +453,16 @@ public class RestClient {
      *
      * @return the httpClient property
      */
-    public HttpClient getHttpClient(){
+    public CloseableHttpClient getHttpClient(){
         return this.httpClient;
+    }
+
+    /**
+     *
+     * @return the ObjectMapper property
+     */
+    public ObjectMapper getJsonMapper() {
+        return MAPPER;
     }
 }
 

@@ -17,10 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,67 +40,64 @@ public class User extends Resource {
     /**
      * Creates a user from a JSON payload.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param json       JSON payload
      */
-    protected User(RestClient restclient, JSONObject json) {
-        super(restclient);
+    protected User(RestClient restClient, JsonNode json) {
+        super(restClient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
     /**
      * Retrieves the given user record.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param username   User logon name
      * @return a user instance
      * @throws JiraException when the retrieval fails
      */
-    public static User get(RestClient restclient, String username)
-            throws JiraException {
+    public static User get(RestClient restClient, String username) throws JiraException {
 
-        JSON result = null;
+        JsonNode result = null;
 
         Map<String, String> params = new HashMap<String, String>();
         params.put("username", username);
 
         try {
-            result = restclient.get(getBaseUri() + "user", params);
+            result = restClient.get(getBaseUri() + "user", params);
         } catch (Exception ex) {
             throw new JiraException("Failed to retrieve user " + username, ex);
         }
 
-        if (!(result instanceof JSONObject))
+        if (result == null || !result.isObject())
             throw new JiraException("JSON payload is malformed");
 
-        return new User(restclient, (JSONObject) result);
+        return new User(restClient, result);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        self = Field.getString(map.get("self"));
-        id = Field.getString(map.get("id"));
-        active = Field.getBoolean(map.get("active"));
-        avatarUrls = Field.getMap(String.class, String.class, map.get("avatarUrls"));
-        displayName = Field.getString(map.get("displayName"));
-        email = getEmailFromMap(map);
-        name = Field.getString(map.get("name"));
+    private void deserialize(JsonNode json) {
+        self = Field.getString(json.get("self"));
+        id = Field.getString(json.get("id"));
+        active = Field.getBoolean(json.get("active"));
+        avatarUrls = Field.getMap(String.class, String.class, json.get("avatarUrls"));
+        displayName = Field.getString(json.get("displayName"));
+        email = getEmailFromMap(json);
+        name = Field.getString(json.get("name"));
     }
 
     /**
      * API changes email address might be represented as either "email" or "emailAddress"
      *
-     * @param map JSON object for the User
+     * @param node JSON object for the User
      * @return String email address of the JIRA user.
      */
-    private String getEmailFromMap(Map map) {
-        if (map.containsKey("email")) {
-            return Field.getString(map.get("email"));
+    private String getEmailFromMap(JsonNode node) {
+        if (node.has("email")) {
+            return Field.getString(node.get("email"));
         } else {
-            return Field.getString(map.get("emailAddress"));
+            return Field.getString(node.get("emailAddress"));
         }
     }
 

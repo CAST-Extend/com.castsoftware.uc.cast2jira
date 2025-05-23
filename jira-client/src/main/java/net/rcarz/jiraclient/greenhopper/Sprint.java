@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient.greenhopper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.rcarz.jiraclient.Field;
 import net.rcarz.jiraclient.RestClient;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import net.sf.json.JSONObject;
 
 import org.joda.time.DateTime;
 
@@ -49,23 +49,21 @@ public class Sprint extends GreenHopperResource {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected Sprint(RestClient restclient, JSONObject json) {
+    protected Sprint(RestClient restclient, JsonNode json) {
         super(restclient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        id = Field.getInteger(map.get("id"));
-        name = Field.getString(map.get("name"));
-        closed = Field.getBoolean(map.get("closed"));
-        startDate = GreenHopperField.getDateTime(map.get("startDate"));
-        endDate = GreenHopperField.getDateTime(map.get("endDate"));
-        completeDate = GreenHopperField.getDateTime(map.get("completeDate"));
-        issuesIds = GreenHopperField.getIntegerArray(map.get("issuesIds"));
+    private void deserialize(JsonNode json) {
+        id = Field.getInteger(json.get("id"));
+        name = Field.getString(json.get("name"));
+        closed = Field.getBoolean(json.get("closed"));
+        startDate = GreenHopperField.getDateTime(json.get("startDate"));
+        endDate = GreenHopperField.getDateTime(json.get("endDate"));
+        completeDate = GreenHopperField.getDateTime(json.get("completeDate"));
+        issuesIds = GreenHopperField.getIntegerArray(json.get("issuesIds"));
     }
 
     @Override

@@ -6,11 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,13 +28,13 @@ public class Configuration {
 	public static Log log = LogFactory.getLog(Configuration.class);
 
 	/** The priority map. */
-	private HashMap<String, String> priorityMap = new HashMap<String, String>(0);
+	private final HashMap<String, String> priorityMap = new HashMap<String, String>(0);
 
     /** The priority map. */
-    private Properties workflowMap = new Properties();
+    private final Properties workflowMap = new Properties();
 
 	/** The field labels map. */
-	private HashMap<String, String> fieldLabelsMap = new HashMap<String, String>(
+	private final HashMap<String, String> fieldLabelsMap = new HashMap<String, String>(
 			0);
 
 	private List<CustomField> customFields;
@@ -80,14 +76,14 @@ public class Configuration {
 			// setup the log level
 			if (debug) {
 				if (output != null) {
-					if (output.trim().toLowerCase()
-							.equals(Constants.LOGJ4_OUTPUT_CONSOLE_MODE)) {
+					if (output.trim()
+							.equalsIgnoreCase(Constants.LOGJ4_OUTPUT_CONSOLE_MODE)) {
 						props.setProperty(Constants.LOGJ4_ROOTLOGGER,
 								Constants.LOGJ4_DEBUG_CONSOLE_MODE);
 						System.out
 								.println("Debug Log Output selected: console");
-					} else if (output.trim().toLowerCase()
-							.equals(Constants.LOGJ4_OUTPUT_FILE)) {
+					} else if (output.trim()
+							.equalsIgnoreCase(Constants.LOGJ4_OUTPUT_FILE)) {
 						props.setProperty(Constants.LOGJ4_ROOTLOGGER,
 								Constants.LOGJ4_DEBUG_FILE_MODE);
 						System.out.println("Debug Log Output selected: file");
@@ -104,12 +100,12 @@ public class Configuration {
 				}
 			}
 
-			if (logPathFile != null && !output.trim().toLowerCase()
-					.equals(Constants.LOGJ4_OUTPUT_CONSOLE_MODE)) {
-				// setup the new file path
+			if (logPathFile != null && !Objects.requireNonNull(output).trim()
+					.equalsIgnoreCase(Constants.LOGJ4_OUTPUT_CONSOLE_MODE)) {
+				// set up the new file path
 				props.setProperty(Constants.LOGJ4_APPENDER_FILE_FILE,
 						logPathFile + "\\"
-								+ format.format(cal.getTime()).toString() 
+								+ format.format(cal.getTime())
 								+ "-"
 								+ appName + "-" + Constants.LOG_FILE_NAME);
 				
@@ -121,7 +117,7 @@ public class Configuration {
 						+ Constants.LOG_FILE_NAME);
 			} else {
 				props.setProperty(Constants.LOGJ4_APPENDER_FILE_FILE, format
-						.format(cal.getTime()).toString()
+						.format(cal.getTime())
 						+ "-"
 						+ appName
 						+ "-"
@@ -144,7 +140,7 @@ public class Configuration {
 	
 	private InputStream getPropStream(String fileName) throws FileNotFoundException
 	{
-	    InputStream rslt = null;
+	    InputStream rslt;
 	    String path = System.getProperty("user.dir");
 	    
 	    String fname = String.format("%s\\%s",path ,fileName);

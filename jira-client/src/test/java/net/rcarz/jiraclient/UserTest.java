@@ -1,6 +1,10 @@
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
 import org.powermock.api.mockito.PowerMockito;
 
@@ -17,10 +21,10 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 public class UserTest {
 
-    private java.lang.String username = "joseph";
-    private java.lang.String displayName = "Joseph McCarthy";
-    private java.lang.String email = "joseph.b.mccarthy2012@googlemail.com";
-    private java.lang.String userID = "10";
+    private final java.lang.String username = "joseph";
+    private final java.lang.String displayName = "Joseph McCarthy";
+    private final java.lang.String email = "joseph.b.mccarthy2012@googlemail.com";
+    private final java.lang.String userID = "10";
     private boolean isActive = true;
     private String self = "https://brainbubble.atlassian.net/rest/api/2/user?username=joseph";
 
@@ -42,25 +46,26 @@ public class UserTest {
         assertTrue(user.isActive());
     }
 
-    private JSONObject getTestJSON() {
-        JSONObject json = new JSONObject();
+    private JsonNode getTestJSON() {
+        ObjectMapper mapper = new ObjectMapper();
 
-        json.put("name", username);
-        json.put("email", email);
-        json.put("active", isActive);
-        json.put("displayName", displayName);
-        json.put("self", self);
+        ObjectNode node = mapper.createObjectNode();
+        node.put("name", username);
+        node.put("email", email);
+        node.put("active", isActive);
+        node.put("displayName", displayName);
+        node.put("self", self);
 
-        JSONObject images = new JSONObject();
+        ObjectNode images = mapper.createObjectNode();
         images.put("16x16", "https://secure.gravatar.com/avatar/a5a271f9eee8bbb3795f41f290274f8c?d=mm&s=16");
         images.put("24x24", "https://secure.gravatar.com/avatar/a5a271f9eee8bbb3795f41f290274f8c?d=mm&s=24");
         images.put("32x32", "https://secure.gravatar.com/avatar/a5a271f9eee8bbb3795f41f290274f8c?d=mm&s=32");
         images.put("48x48", "https://secure.gravatar.com/avatar/a5a271f9eee8bbb3795f41f290274f8c?d=mm&s=48");
 
-        json.put("avatarUrls", images);
-        json.put("id", "10");
+        node.set("avatarUrls", images);
+        node.put("id", "10");
 
-        return json;
+        return node;
     }
 
     @Test
@@ -107,4 +112,5 @@ public class UserTest {
 
         assertTrue(user.isActive());
     }
+
 }

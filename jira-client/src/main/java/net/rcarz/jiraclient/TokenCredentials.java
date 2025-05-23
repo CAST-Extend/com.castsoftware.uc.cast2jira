@@ -17,12 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of httpclient5 and Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
-
-import org.apache.http.HttpRequest;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.hc.core5.http.ClassicHttpRequest;
 
 /**
  * Basic HTTP authentication credentials.
@@ -54,7 +55,7 @@ public class TokenCredentials implements ICredentials {
      *
      * @param req HTTP request to authenticate
      */
-    public void authenticate(HttpRequest req) {
+    public void authenticate(ClassicHttpRequest req) {
         if (token != null) {
             req.addHeader("Cookie",cookieName+"="+token+";");
         }
@@ -72,16 +73,16 @@ public class TokenCredentials implements ICredentials {
     public void initialize(RestClient client) throws JiraException {
         if (token==null) {
             try {
-                JSONObject req = new JSONObject();
+                ObjectNode req = client.getJsonMapper().createObjectNode();
                 req.put("username", username);
                 req.put("password", password);
-                JSON json = client.post(Resource.getAuthUri() + "session", req);
-                if (json instanceof JSONObject) {
-	                JSONObject jso = (JSONObject) json;
-	                jso = (JSONObject) jso.get("session");
-	                cookieName = (String)jso.get("name");
-	                token = (String)jso.get("value");
-	                
+
+                JsonNode json = client.post(Resource.getAuthUri() + "session", req);
+
+                if (json != null && json.has("session")) {
+                    JsonNode sessionNode = json.get("session");
+                    cookieName = sessionNode.path("name").asText(null);
+                    token = sessionNode.path("value").asText(null);
                 }
             } catch (Exception ex) {
                 throw new JiraException("Failed to login", ex);

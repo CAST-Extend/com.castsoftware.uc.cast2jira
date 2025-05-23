@@ -49,7 +49,7 @@ public class ViolationCRC {
 	public int getHashCode() throws Exception {
 
 		// get bytes from string
-		byte bytes[] = this.record.getBytes();
+		byte[] bytes = this.record.getBytes();
 
 		CRC32 crc = new CRC32();
 

@@ -1,10 +1,6 @@
 package com.castsoftware.jira.util;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -23,10 +19,7 @@ public class OptionsValidation {
 	/** The log. */
 	public static Log log = LogFactory.getLog(OptionsValidation.class);
 
-	/** The Command line parser. */
-	private CommandLineParser parser;
-
-	/** The Command line. */
+    /** The Command line. */
 	private CommandLine line;
 
 	/** The args. */
@@ -55,7 +48,8 @@ public class OptionsValidation {
 	public boolean getOptionsValidation(Options options) throws ParseException, JiraException {
 
 		try {
-			parser = new GnuParser();
+            /** The Command line parser. */
+            CommandLineParser parser = new DefaultParser();
 			line = parser.parse(options, args);
 			// setCommandLine(parser.parse(options, getArgs()));
 			setCommandLine(line);
@@ -104,14 +98,13 @@ public class OptionsValidation {
 			}
 
 			if (line.getOptionValue(Constants.CAST_DB_PROVIDER) != null)
-				if (line.getOptionValue(Constants.CAST_DB_PROVIDER).trim()
-						.toLowerCase().equals(Constants.DB_CSS)
+				if (line.getOptionValue(Constants.CAST_DB_PROVIDER).trim().equalsIgnoreCase(Constants.DB_CSS)
 						|| line.getOptionValue(Constants.CAST_DB_PROVIDER)
-								.trim().toLowerCase()
-								.equals(Constants.DB_ORACLE)
+								.trim()
+								.equalsIgnoreCase(Constants.DB_ORACLE)
 						|| line.getOptionValue(Constants.CAST_DB_PROVIDER)
-								.trim().toLowerCase()
-								.equals(Constants.DB_SQLSERVER)) {
+								.trim()
+								.equalsIgnoreCase(Constants.DB_SQLSERVER)) {
 					log.debug("Database provider selected is: "
 							+ line.getOptionValue(Constants.CAST_DB_PROVIDER)
 									.trim().toLowerCase());
@@ -129,7 +122,7 @@ public class OptionsValidation {
 								"The parameter -databaseprovider has been provided so -databaseport is mandatory");
 					}
 					if (line.getOptionValue(Constants.CAST_DB_SCHEMA) == null) {
-						
+
 						throw new org.apache.commons.cli.ParseException(
 								"The parameter -databaseprovider has been provided so -databaseschema is mandatory");
 					}else{

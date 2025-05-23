@@ -25,8 +25,8 @@ public class SqlStatements
 	/** The log. */
 	public static Log log = LogFactory.getLog(SqlStatements.class);
 
-	/** The appname. */
-	private String appname;
+	/** The appName. */
+	private String appName;
 
 	/** The schema profile. */
 	private String schemaProfile;
@@ -35,13 +35,13 @@ public class SqlStatements
 	private String databaseProvider;
 
 	/** The map. */
-	private HashMap<Integer, ActionPlanViolation> map = new HashMap<Integer, ActionPlanViolation>(0);
+	private final HashMap<Integer, ActionPlanViolation> map = new HashMap<>(0);
 
 	/**
 	 * Instantiates a new sql statements.
 	 * 
-	 * @param appname
-	 *            the appname
+	 * @param appName
+	 *            the appName
 	 * @param schemaProfile
 	 *            the schema profile
 	 * @param databaseProvider
@@ -49,9 +49,9 @@ public class SqlStatements
 	 * @throws Exception
 	 *             the exception
 	 */
-	public SqlStatements(String appname, String schemaProfile, String databaseProvider) throws Exception
+	public SqlStatements(String appName, String schemaProfile, String databaseProvider) throws Exception
 	{
-		setAppname(appname);
+		setAppName(appName);
 		setSchemaProfile(schemaProfile);
 		setDatabaseProvider(databaseProvider);
 	}
@@ -65,19 +65,20 @@ public class SqlStatements
 	 * @throws SQLException
 	 *             the SQL exception
 	 */
-	public HashMap<Integer, ActionPlanViolation> getActionPlan(Connection connection) throws SQLException
-	{
+	public HashMap<Integer, ActionPlanViolation> getActionPlan(Connection connection) throws SQLException {
+		PreparedStatement pst = null;
+		ResultSet rs = null;
+
 		try {
 			String sqlString = getSQLStatement();
-			PreparedStatement pst = connection.prepareStatement(sqlString);
-			// pst.setString(1, getAppname());
+			pst = connection.prepareStatement(sqlString);
 
 			if (log.isDebugEnabled()) {
-				log.debug("Sql Statement to execute to get ation plan: " + sqlString);
+				log.debug("Sql Statement to execute to get action plan: " + sqlString);
 			}
 
 			// record key "setKey()"
-			ResultSet rs = pst.executeQuery();
+			rs = pst.executeQuery();
 			ViolationCRC crc = new ViolationCRC();
 			String fc = "";
 			while (rs.next()) {
@@ -96,20 +97,35 @@ public class SqlStatements
 					map.put(crc.getHashCode(), mr);
 				} catch (Exception ex) {
 					log.error(
-							"CRC code has not been calculed - Review the SqlStatemnt output because the record will not be added to Jira : "
+							"CRC code has not been computed - Review the SqlStatement output because the record will not be added to Jira : "
 									+ fc + ". Exception:" + ex.getMessage());
 				}
 				if (log.isDebugEnabled()) {
 					log.debug("Record concatenated: " + fc);
 				}
 			}
-			rs.close();
-			pst.close();
 
 		} catch (SQLException e) {
 			log.fatal("getActionPlan(): Error Getting Action Plan!" + e.getMessage());
 			throw e;
+
+		} finally {
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException ex) {
+					log.warn("Failed to close ResultSet: " + ex.getMessage());
+				}
+			}
+			if (pst != null) {
+				try {
+					pst.close();
+				} catch (SQLException ex) {
+					log.warn("Failed to close PreparedStatement: " + ex.getMessage());
+				}
+			}
 		}
+
 		return map;
 	}
 
@@ -118,24 +134,20 @@ public class SqlStatements
 	// where dmd2.metric_id=dmd.metric_id and dmd2.language = dmd.language and
 	// dmd2.description_type_id = 1) reason,
 
-	private String getMetricDescriptionStatement(String name, int typeId)
-	{
-		String rslt = new StringBuffer().append("\n(select dmd").append(typeId).append(".metric_description from ")
-				.append(getSchemaProfile()).append(".dss_metric_descriptions dmd").append(typeId).append(" \n")
-				.append("where dmd").append(typeId).append(".metric_id=dmd.metric_id and dmd").append(typeId)
-				.append(".language = dmd.language AND dmd").append(typeId).append(".description_type_id = ").append(typeId)
-				.append(") ").append(name).toString();
+	private String getMetricDescriptionStatement(String name, int typeId) {
 
-		return rslt;
+        return new StringBuffer().append("\n(select dmd").append(typeId).append(".metric_description from ")
+                .append(getSchemaProfile()).append(".dss_metric_descriptions dmd").append(typeId).append(" \n")
+                .append("where dmd").append(typeId).append(".metric_id=dmd.metric_id and dmd").append(typeId)
+                .append(".language = dmd.language AND dmd").append(typeId).append(".description_type_id = ").append(typeId)
+                .append(") ").append(name).toString();
 	}
 
 	/**
 	 * Gets the SQL statement.
 	 * 
 	 * @return the SQL statement
-	 * @throws SQLException
-	 *             the SQL exception
-	 */
+     */
 	private String getSQLStatement() 
 	{
 		String techCriteria = new StringBuffer().append("\n(select string_agg(")
@@ -153,61 +165,58 @@ public class SqlStatements
 				.append("AND dmdp.metric_id=bdmt.metric_parent_id AND dmdp.metric_id in (60011,60012,60013,60014,60016) ")
 				.append(") business_criteria	\n").toString();
 
-		String statement = new StringBuffer()
-				.append("SELECT distinct vap.object_id, dmd.metric_id, dmd.metric_description AS metric, dso.object_full_name AS object_name, vap.tag, vap.priority, ")
-				.append("dvs.snapshot_id, vap.first_snapshot_date, vap.sel_date AS fecha, vap.action_def AS action_message,  dvs.violation_status, ")
-				.append("dsp.line_start,  dsp.line_end, dcs.source_path,  dcs.source_code,")
-				.append(getMetricDescriptionStatement("reason", 1)).append(",")
-				.append(getMetricDescriptionStatement("desciption", 2)).append(",")
-				.append(getMetricDescriptionStatement("remediation", 3)).append(",")
-				.append(getMetricDescriptionStatement("reference", 4)).append(",")
-				.append(getMetricDescriptionStatement("vil_example", 5)).append(",")
-				.append(getMetricDescriptionStatement("rem_exampel", 6)).append(",")
-				.append(getMetricDescriptionStatement("output", 7)).append(",")
-				.append(getMetricDescriptionStatement("total", 1)).append(",").append(techCriteria)
-				.append(businessCriteria).append("\nFROM\n")
-				.append(String.format("%s.%s %s,\n", getSchemaProfile(), "viewer_action_plans", "vap"))
-				.append(String.format("%s.%s %s,\n ", getSchemaProfile(), "dss_objects", "dso"))
-				.append(String.format("%s.%s %s, \n", getSchemaProfile(), "dss_violation_statuses ", "dvs"))
-				.append(String.format("%s.%s %s, \n", getSchemaProfile(), "dss_metric_descriptions", "dmd"))
-				.append(String.format("%s.%s %s, \n", getSchemaProfile(), "dss_translation_table", "dtt"))
-				.append(String.format("%s.%s %s,\n ", getLocalDatabase(), "dss_source_positions", "dsp"))
-				.append(String.format("%s.%s %s\n ", getLocalDatabase(), "dss_code_sources", "dcs")).append("\n WHERE ")
-				.append("vap.object_id = dso.object_id ").append("and dvs.object_id = vap.object_id\n")
-				.append("and dvs.diag_id = vap.metric_id \n")
-				.append(String.format(
-						"and dvs.snapshot_id = (select max(snapshot_id) from %s.dss_violation_statuses dvs2 where dvs2.object_id=vap.object_id and dvs2.diag_id=vap.metric_id) \n",
-						getSchemaProfile()))
-				.append("and vap.priority > 0 \n")
-				.append("and dmd.metric_id = vap.metric_id and dmd.language = 'ENGLISH'  and dmd.description_type_id = 0 \n")
-				.append("and dtt.object_id = vap.object_id \n").append("and dtt.site_object_id = dsp.object_id  \n")
-				.append("and dsp.source_id = dcs.source_id \n")
-				// .append("\ncpt.APP_NAME = ? ")
-				.toString();
-
-		return statement;
+        return new StringBuffer()
+                .append("SELECT distinct vap.object_id, dmd.metric_id, dmd.metric_description AS metric, dso.object_full_name AS object_name, vap.tag, vap.priority, ")
+                .append("dvs.snapshot_id, vap.first_snapshot_date, vap.sel_date AS fecha, vap.action_def AS action_message,  dvs.violation_status, ")
+                .append("dsp.line_start,  dsp.line_end, dcs.source_path,  dcs.source_code,")
+                .append(getMetricDescriptionStatement("reason", 1)).append(",")
+                .append(getMetricDescriptionStatement("desciption", 2)).append(",")
+                .append(getMetricDescriptionStatement("remediation", 3)).append(",")
+                .append(getMetricDescriptionStatement("reference", 4)).append(",")
+                .append(getMetricDescriptionStatement("vil_example", 5)).append(",")
+                .append(getMetricDescriptionStatement("rem_exampel", 6)).append(",")
+                .append(getMetricDescriptionStatement("output", 7)).append(",")
+                .append(getMetricDescriptionStatement("total", 1)).append(",").append(techCriteria)
+                .append(businessCriteria).append("\nFROM\n")
+                .append(String.format("%s.%s %s,\n", getSchemaProfile(), "viewer_action_plans", "vap"))
+                .append(String.format("%s.%s %s,\n ", getSchemaProfile(), "dss_objects", "dso"))
+                .append(String.format("%s.%s %s, \n", getSchemaProfile(), "dss_violation_statuses ", "dvs"))
+                .append(String.format("%s.%s %s, \n", getSchemaProfile(), "dss_metric_descriptions", "dmd"))
+                .append(String.format("%s.%s %s, \n", getSchemaProfile(), "dss_translation_table", "dtt"))
+                .append(String.format("%s.%s %s,\n ", getLocalDatabase(), "dss_source_positions", "dsp"))
+                .append(String.format("%s.%s %s\n ", getLocalDatabase(), "dss_code_sources", "dcs")).append("\n WHERE ")
+                .append("vap.object_id = dso.object_id ").append("and dvs.object_id = vap.object_id\n")
+                .append("and dvs.diag_id = vap.metric_id \n")
+                .append(String.format(
+                        "and dvs.snapshot_id = (select max(snapshot_id) from %s.dss_violation_statuses dvs2 where dvs2.object_id=vap.object_id and dvs2.diag_id=vap.metric_id) \n",
+                        getSchemaProfile()))
+                .append("and vap.priority > 0 \n")
+                .append("and dmd.metric_id = vap.metric_id and dmd.language = 'ENGLISH'  and dmd.description_type_id = 0 \n")
+                .append("and dtt.object_id = vap.object_id \n").append("and dtt.site_object_id = dsp.object_id  \n")
+                .append("and dsp.source_id = dcs.source_id \n")
+                .toString();
 
 	}
 
 	/**
-	 * Gets the appname.
+	 * Gets the appName.
 	 * 
-	 * @return the appname
+	 * @return the appName
 	 */
-	public String getAppname()
+	public String getAppName()
 	{
-		return appname;
+		return appName;
 	}
 
 	/**
-	 * Sets the appname.
+	 * Sets the appName.
 	 * 
-	 * @param appname
-	 *            the appname to set
+	 * @param appName
+	 *            the appName to set
 	 */
-	public void setAppname(String appname)
+	public void setAppName(String appName)
 	{
-		this.appname = appname;
+		this.appName = appName;
 	}
 
 	/**

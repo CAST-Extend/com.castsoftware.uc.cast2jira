@@ -17,12 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import java.util.Map;
-
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Represents an issue priority.
@@ -38,47 +37,44 @@ public class Priority extends Resource {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected Priority(RestClient restclient, JSONObject json) {
+    protected Priority(RestClient restclient, JsonNode json) {
         super(restclient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        self = Field.getString(map.get("self"));
-        id = Field.getString(map.get("id"));
-        iconUrl = Field.getString(map.get("iconUrl"));
-        name = Field.getString(map.get("name"));
+    private void deserialize(JsonNode json) {
+        self = Field.getString(json.get("self"));
+        id = Field.getString(json.get("id"));
+        iconUrl = Field.getString(json.get("iconUrl"));
+        name = Field.getString(json.get("name"));
     }
 
     /**
      * Retrieves the given priority record.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param id Internal JIRA ID of the priority
      *
      * @return a priority instance
      *
      * @throws JiraException when the retrieval fails
      */
-    public static Priority get(RestClient restclient, String id)
-        throws JiraException {
+    public static Priority get(RestClient restClient, String id) throws JiraException {
 
-        JSON result = null;
+        JsonNode result;
 
         try {
-            result = restclient.get(getBaseUri() + "priority/" + id);
+            result = restClient.get(getBaseUri() + "priority/" + id);
         } catch (Exception ex) {
             throw new JiraException("Failed to retrieve priority " + id, ex);
         }
 
-        if (!(result instanceof JSONObject))
+        if (result == null || !result.isObject())
             throw new JiraException("JSON payload is malformed");
 
-        return new Priority(restclient, (JSONObject)result);
+        return new Priority(restClient, result);
     }
 
     @Override

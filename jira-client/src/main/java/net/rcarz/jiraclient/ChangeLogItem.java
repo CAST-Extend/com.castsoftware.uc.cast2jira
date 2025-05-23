@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import java.util.Map;
-
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Item in a {@link ChangeLogEntry}.
@@ -63,26 +63,24 @@ public class ChangeLogItem extends Resource {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected ChangeLogItem(RestClient restclient, JSONObject json) {
+    protected ChangeLogItem(RestClient restclient, JsonNode json) {
         super(restclient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
     /**
      * Deserializes the json payload.
      * @param json the json payload
      */
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        field = Field.getString(map.get("field"));
-        fieldType = Field.getString(map.get("fieldtype"));
-        from = Field.getString(map.get("from"));
-        fromString = Field.getString(map.get("fromString"));
-        to = Field.getString(map.get("to"));
-        toString = Field.getString(map.get("toString"));
+    private void deserialize(JsonNode json) {
+        field = Field.getString(json.get("field"));
+        fieldType = Field.getString(json.get("fieldtype"));
+        from = Field.getString(json.get("from"));
+        fromString = Field.getString(json.get("fromString"));
+        to = Field.getString(json.get("to"));
+        toString = Field.getString(json.get("toString"));
     }
 
     /**

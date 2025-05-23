@@ -17,12 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
 import java.util.List;
-import java.util.Map;
 
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Issue change log.
@@ -39,22 +40,20 @@ public class ChangeLog extends Resource {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected ChangeLog(RestClient restclient, JSONObject json) {
+    protected ChangeLog(RestClient restclient, JsonNode json) {
         super(restclient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
     /**
      * Deserializes a change log from a json payload.
      * @param json the json payload
      */
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        entries = Field.getResourceArray(ChangeLogEntry.class, map.get(
-                Field.CHANGE_LOG_ENTRIES), restclient);
+    private void deserialize(JsonNode json) {
+        JsonNode entriesNode = json.get(Field.CHANGE_LOG_ENTRIES);
+        entries = Field.getResourceArray(ChangeLogEntry.class, entriesNode, restclient);
     }
 
     /**

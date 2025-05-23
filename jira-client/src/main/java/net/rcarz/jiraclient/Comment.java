@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Date;
-import java.util.Map;
 
 /**
  * Represents an issue comment.
@@ -39,32 +39,30 @@ public class Comment extends Resource {
     /**
      * Creates a comment from a JSON payload.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param json JSON payload
      */
-    protected Comment(RestClient restclient, JSONObject json) {
-        super(restclient);
+    protected Comment(RestClient restClient, JsonNode json) {
+        super(restClient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        self = Field.getString(map.get("self"));
-        id = Field.getString(map.get("id"));
-        author = Field.getResource(User.class, map.get("author"), restclient);
-        body = Field.getString(map.get("body"));
-        created = Field.getDateTime(map.get("created"));
-        updated = Field.getDateTime(map.get("updated"));
-        updatedAuthor = Field.getResource(User.class, map.get("updatedAuthor"), restclient);
+    private void deserialize(JsonNode json) {
+        self = Field.getString(json.get("self"));
+        id = Field.getString(json.get("id"));
+        author = Field.getResource(User.class, json.get("author"), restclient);
+        body = Field.getString(json.get("body"));
+        created = Field.getDateTime(json.get("created"));
+        updated = Field.getDateTime(json.get("updated"));
+        updatedAuthor = Field.getResource(User.class, json.get("updatedAuthor"), restclient);
     }
 
     /**
      * Retrieves the given comment record.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param issue Internal JIRA ID of the associated issue
      * @param id Internal JIRA ID of the comment
      *
@@ -72,21 +70,21 @@ public class Comment extends Resource {
      *
      * @throws JiraException when the retrieval fails
      */
-    public static Comment get(RestClient restclient, String issue, String id)
+    public static Comment get(RestClient restClient, String issue, String id)
         throws JiraException {
 
-        JSON result = null;
+        JsonNode result;
 
         try {
-            result = restclient.get(getBaseUri() + "issue/" + issue + "/comment/" + id);
+            result = restClient.get(getBaseUri() + "issue/" + issue + "/comment/" + id);
         } catch (Exception ex) {
             throw new JiraException("Failed to retrieve comment " + id + " on issue " + issue, ex);
         }
 
-        if (!(result instanceof JSONObject))
+        if (result == null || !result.isObject())
             throw new JiraException("JSON payload is malformed");
 
-        return new Comment(restclient, (JSONObject)result);
+        return new Comment(restClient, result);
     }
 
     @Override

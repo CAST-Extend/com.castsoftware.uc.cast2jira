@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
 import java.lang.Iterable;
@@ -24,15 +26,14 @@ import java.lang.UnsupportedOperationException;
 import java.sql.Timestamp;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import net.sf.json.JSONNull;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 /**
  * Utility functions for translating between JSON and fields.
@@ -93,7 +94,8 @@ public final class Field {
      */
     public static final class ValueTuple {
         public final String type;
-        public final Object value;
+        public final JsonNode value;
+        private static final ObjectMapper mapper = new ObjectMapper();
 
         /**
          * Initialises the value tuple.
@@ -101,9 +103,9 @@ public final class Field {
          * @param type
          * @param value
          */
-        public ValueTuple(String type, Object value) {
+        public ValueTuple(String type, JsonNode value) {
             this.type = type;
-            this.value = (value != null ? value : JSONNull.getInstance());
+            this.value = (value != null ? value : NullNode.instance);
         }
 
         /**
@@ -113,7 +115,7 @@ public final class Field {
          * @param value
          */
         public ValueTuple(ValueType type, Object value) {
-            this(type.toString(), value);
+            this(type.toString(), (value != null ? mapper.valueToTree(value) : NullNode.instance));
         }
     }
 
@@ -153,37 +155,52 @@ public final class Field {
     public static final String DATE_FORMAT = "yyyy-MM-dd";
     public static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
+    private static final ObjectMapper mapper = new ObjectMapper();
+
     private Field() { }
 
     /**
      * Gets a boolean value from the given object.
      *
-     * @param b a Boolean instance
+     * @param b a Boolean representation
      *
      * @return a boolean primitive or false if b isn't a Boolean instance
      */
     public static boolean getBoolean(Object b) {
-        boolean result = false;
+        if (b instanceof Boolean) {
+            return (Boolean) b;
+        } else if (b instanceof JsonNode) {
+            JsonNode node = (JsonNode) b;
+            if (node.isBoolean()) {
+                return node.booleanValue();
+            } else if (node.isTextual()) {
+                return Boolean.parseBoolean(node.asText());
+            }
+        } else if (b instanceof String) {
+            return Boolean.parseBoolean((String) b);
+        }
 
-        if (b instanceof Boolean)
-            result = ((Boolean)b).booleanValue();
-
-        return result;
+        return false;
     }
 
     /**
      * Gets a list of comments from the given object.
      *
-     * @param c a JSONObject instance
-     * @param restclient REST client instance
+     * @param c a JsonNode instance
+     * @param restClient REST client instance
      *
      * @return a list of comments found in c
      */
-    public static List<Comment> getComments(Object c, RestClient restclient) {
-        List<Comment> results = new ArrayList<Comment>();
+    public static List<Comment> getComments(Object c, RestClient restClient) {
+        List<Comment> results = new ArrayList<>();
 
-        if (c instanceof JSONObject && !((JSONObject)c).isNullObject())
-            results = getResourceArray(Comment.class, ((Map)c).get("comments"), restclient);
+        if (c instanceof JsonNode) {
+            JsonNode node = (JsonNode) c;
+            if (!node.isNull() && node.has("comments")) {
+                JsonNode commentsNode = node.get("comments");
+                results = getResourceArray(Comment.class, commentsNode, restClient);
+            }
+        }
 
         return results;
     }
@@ -191,125 +208,204 @@ public final class Field {
     /**
      * Gets a list of work logs from the given object.
      *
-     * @param c a JSONObject instance
-     * @param restclient REST client instance
+     * @param c a JsonNode instance
+     * @param restClient REST client instance
      *
      * @return a list of work logs found in c
      */
-    public static List<WorkLog> getWorkLogs(Object c, RestClient restclient) {
+    public static List<WorkLog> getWorkLogs(Object c, RestClient restClient) {
         List<WorkLog> results = new ArrayList<WorkLog>();
 
-        if (c instanceof JSONObject && !((JSONObject)c).isNullObject())
-            results = getResourceArray(WorkLog.class, ((Map)c).get("worklogs"), restclient);
-
+        if (c instanceof JsonNode) {
+            JsonNode node = (JsonNode) c;
+            if (!node.isNull() && node.has("worklogs")) {
+                JsonNode worklogsNode = node.get("worklogs");
+                results = getResourceArray(WorkLog.class, worklogsNode, restClient);
+            }
+        }
         return results;
     }
     
     /**
      * Gets a list of remote links from the given object.
      *
-     * @param c a JSONObject instance
-     * @param restclient REST client instance
+     * @param c a JsonNode instance
+     * @param restClient REST client instance
      *
      * @return a list of remote links found in c
      */
-    public static List<RemoteLink> getRemoteLinks(Object c, RestClient restclient) {
-        List<RemoteLink> results = new ArrayList<RemoteLink>();
+    public static List<RemoteLink> getRemoteLinks(Object c, RestClient restClient) {
+        List<RemoteLink> results = new ArrayList<>();
 
-        if (c instanceof JSONArray)
-            results = getResourceArray(RemoteLink.class, c, restclient);
-
+        if (c instanceof JsonNode) {
+            JsonNode node = (JsonNode) c;
+            if (node.isArray()) {
+                results = getResourceArray(RemoteLink.class, node, restClient);
+            }
+        }
         return results;
     }
 
     /**
      * Gets a date from the given object.
      *
-     * @param d a string representation of a date
+     * @param d a representation of a date
      *
-     * @return a Date instance or null if d isn't a string
+     * @return a Date instance or null if d isn't a string or JsonNode
      */
     public static Date getDate(Object d) {
-        Date result = null;
+        if (d == null) return null;
+
+        String dateStr = null;
 
         if (d instanceof String) {
-            SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
-            result = df.parse((String)d, new ParsePosition(0));
+            dateStr = (String) d;
+        } else if (d instanceof JsonNode) {
+            JsonNode node = (JsonNode) d;
+            if (node.isTextual()) {
+                dateStr = node.asText();
+            }
         }
 
-        return result;
+        if (dateStr != null) {
+            SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
+            return df.parse(dateStr, new ParsePosition(0));
+        }
+
+        return null;
     }
 
     /**
      * Gets a date with a time from the given object.
      *
-     * @param d a string representation of a date
+     * @param d a representation of a date
      *
-     * @return a Date instance or null if d isn't a string
+     * @return a Date instance or null if d isn't a string or JsonNode
      */
     public static Date getDateTime(Object d) {
-        Date result = null;
+        if (d == null) return null;
+
+        String dateStr = null;
 
         if (d instanceof String) {
-            SimpleDateFormat df = new SimpleDateFormat(DATETIME_FORMAT);
-            result = df.parse((String)d, new ParsePosition(0));
+            dateStr = (String) d;
+        } else if (d instanceof JsonNode) {
+            JsonNode node = (JsonNode) d;
+            if (node.isTextual()) {
+                dateStr = node.asText();
+            }
         }
 
-        return result;
+        if (dateStr != null) {
+            SimpleDateFormat df = new SimpleDateFormat(DATETIME_FORMAT);
+            return df.parse(dateStr, new ParsePosition(0));
+        }
+
+        return null;
     }
 
     /**
-     * Gets an floating-point number from the given object.
+     * Gets a floating-point number from the given object.
      *
-     * @param i an Double instance
+     * @param i a Double representation
      *
-     * @return an floating-point number or null if i isn't a Double instance
+     * @return a floating-point number or null if i isn't a Double representation
      */
     public static Double getDouble(Object i) {
-        Double result = null;
+        if (i instanceof Double) {
+            return (Double) i;
+        } else if (i instanceof Number) {
+            return ((Number) i).doubleValue();
+        } else if (i instanceof String) {
+            try {
+                return Double.parseDouble((String) i);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        } else if (i instanceof JsonNode) {
+            JsonNode node = (JsonNode) i;
+            if (node.isNumber()) {
+                return node.doubleValue();
+            } else if (node.isTextual()) {
+                try {
+                    return Double.parseDouble(node.asText());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
+        }
 
-        if (i instanceof Double)
-            result = (Double)i;
-
-        return result;
+        return null;
     }
 
     /**
      * Gets an integer from the given object.
      *
-     * @param i an Integer instance
+     * @param i an Integer representation
      *
-     * @return an integer primitive or 0 if i isn't an Integer instance
+     * @return an integer primitive or 0 if i isn't an Integer representation
      */
     public static int getInteger(Object i) {
-        int result = 0;
+        if (i instanceof Integer) {
+            return (Integer) i;
+        } else if (i instanceof Number) {
+            return ((Number) i).intValue();
+        } else if (i instanceof String) {
+            try {
+                return Integer.parseInt((String) i);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        } else if (i instanceof JsonNode) {
+            JsonNode node = (JsonNode) i;
+            if (node.isInt() || node.isNumber()) {
+                return node.intValue();
+            } else if (node.isTextual()) {
+                try {
+                    return Integer.parseInt(node.asText());
+                } catch (NumberFormatException e) {
+                    return 0;
+                }
+            }
+        }
 
-        if (i instanceof Integer)
-            result = ((Integer)i).intValue();
-
-        return result;
+        return 0;
     }
 
     /**
      * Gets a generic map from the given object.
      *
-     * @param keytype Map key data type
-     * @param valtype Map value data type
+     * @param keyType Map key data type
+     * @param valType Map value data type
      * @param m a JSONObject instance
      *
      * @return a Map instance with all entries found in m
      */
-    public static <TK extends Object, TV extends Object> Map<TK, TV> getMap(
-        Class<TK> keytype, Class<TV> valtype, Object m) {
+    public static <TK, TV> Map<TK, TV> getMap(
+        Class<TK> keyType, Class<TV> valType, Object m) {
 
-        Map<TK, TV> result = new HashMap<TK, TV>();
+        Map<TK, TV> result = new HashMap<>();
 
-        if (m instanceof JSONObject && !((JSONObject)m).isNullObject()) {
-            for (Object k : ((Map)m).keySet()) {
-                Object v = ((Map)m).get(k);
+        if (m instanceof JsonNode) {
+            JsonNode node = (JsonNode) m;
+            if (node.isObject()) {
+                ObjectMapper mapper = new ObjectMapper();
+                Iterator<String> fieldNames = node.fieldNames();
 
-                if (k.getClass() == keytype && v.getClass() == valtype)
-                    result.put((TK)k, (TV)v);
+                while (fieldNames.hasNext()) {
+                    String fieldName = fieldNames.next();
+                    JsonNode valueNode = node.get(fieldName);
+                    try {
+                        TK key = mapper.convertValue(fieldName, keyType);
+                        TV value = mapper.convertValue(valueNode, valType);
+
+                        if (keyType.isInstance(key) && valType.isInstance(value)) {
+                            result.put(key,value);
+                        }
+                    } catch (IllegalArgumentException e) {
+                        // Skip unconvertible entries
+                    }
+                }
             }
         }
 
@@ -320,64 +416,64 @@ public final class Field {
      * Gets a JIRA resource from the given object.
      *
      * @param type Resource data type
-     * @param r a JSONObject instance
-     * @param restclient REST client instance
+     * @param r a JsonNode instance
+     * @param restClient REST client instance
      *
-     * @return a Resource instance or null if r isn't a JSONObject instance
+     * @return a Resource instance or null if r isn't a JsonNode instance
      */
-    public static <T extends Resource> T getResource(
-        Class<T> type, Object r, RestClient restclient) {
+    public static <T extends Resource> T getResource(Class<T> type, Object r, RestClient restClient) {
 
-        T result = null;
-
-        if (r instanceof JSONObject && !((JSONObject)r).isNullObject()) {
-            if (type == Attachment.class)
-                result = (T)new Attachment(restclient, (JSONObject)r);
-            else if (type == ChangeLog.class)
-                result = (T)new ChangeLog(restclient, (JSONObject)r);
-            else if (type == ChangeLogEntry.class)
-                result = (T)new ChangeLogEntry(restclient, (JSONObject)r);
-            else if (type == ChangeLogItem.class)
-                result = (T)new ChangeLogItem(restclient, (JSONObject)r);
-            else if (type == Comment.class)
-                result = (T)new Comment(restclient, (JSONObject)r);
-            else if (type == Component.class)
-                result = (T)new Component(restclient, (JSONObject)r);
-            else if (type == CustomFieldOption.class)
-                result = (T)new CustomFieldOption(restclient, (JSONObject)r);
-            else if (type == Issue.class)
-                result = (T)new Issue(restclient, (JSONObject)r);
-            else if (type == IssueLink.class)
-                result = (T)new IssueLink(restclient, (JSONObject)r);
-            else if (type == IssueType.class)
-                result = (T)new IssueType(restclient, (JSONObject)r);
-            else if (type == LinkType.class)
-                result = (T)new LinkType(restclient, (JSONObject)r);
-            else if (type == Priority.class)
-                result = (T)new Priority(restclient, (JSONObject)r);
-            else if (type == Project.class)
-                result = (T)new Project(restclient, (JSONObject)r);
-            else if (type == RemoteLink.class)
-                result = (T)new RemoteLink(restclient, (JSONObject)r);
-            else if (type == Resolution.class)
-                result = (T)new Resolution(restclient, (JSONObject)r);
-            else if (type == Status.class)
-                result = (T)new Status(restclient, (JSONObject)r);
-            else if (type == Transition.class)
-                result = (T)new Transition(restclient, (JSONObject)r);
-            else if (type == User.class)
-                result = (T)new User(restclient, (JSONObject)r);
-            else if (type == Version.class)
-                result = (T)new Version(restclient, (JSONObject)r);
-            else if (type == Votes.class)
-                result = (T)new Votes(restclient, (JSONObject)r);
-            else if (type == Watches.class)
-                result = (T)new Watches(restclient, (JSONObject)r);
-            else if (type == WorkLog.class)
-                result = (T)new WorkLog(restclient, (JSONObject)r);
+        if (!(r instanceof JsonNode)) {
+            return null;
         }
+        JsonNode node = (JsonNode) r;
 
-        return result;
+        if (type == Attachment.class)
+            return type.cast(new Attachment(restClient, node));
+        else if (type == ChangeLog.class)
+            return type.cast(new ChangeLog(restClient, node));
+        else if (type == ChangeLogEntry.class)
+            return type.cast(new ChangeLogEntry(restClient, node));
+        else if (type == ChangeLogItem.class)
+            return type.cast(new ChangeLogItem(restClient, node));
+        else if (type == Comment.class)
+            return type.cast(new Comment(restClient, node));
+        else if (type == Component.class)
+            return type.cast(new Component(restClient, node));
+        else if (type == CustomFieldOption.class)
+            return type.cast(new CustomFieldOption(restClient, node));
+        else if (type == Issue.class)
+            return type.cast(new Issue(restClient, node));
+        else if (type == IssueLink.class)
+            return type.cast(new IssueLink(restClient, node));
+        else if (type == IssueType.class)
+            return type.cast(new IssueType(restClient, node));
+        else if (type == LinkType.class)
+            return type.cast(new LinkType(restClient, node));
+        else if (type == Priority.class)
+            return type.cast(new Priority(restClient, node));
+        else if (type == Project.class)
+            return type.cast(new Project(restClient, node));
+        else if (type == RemoteLink.class)
+            return type.cast(new RemoteLink(restClient, node));
+        else if (type == Resolution.class)
+            return type.cast(new Resolution(restClient, node));
+        else if (type == Status.class)
+            return type.cast(new Status(restClient, node));
+        else if (type == Transition.class)
+            return type.cast(new Transition(restClient, node));
+        else if (type == User.class)
+            return type.cast(new User(restClient, node));
+        else if (type == Version.class)
+            return type.cast(new Version(restClient, node));
+        else if (type == Votes.class)
+            return type.cast(new Votes(restClient, node));
+        else if (type == Watches.class)
+            return type.cast(new Watches(restClient, node));
+        else if (type == WorkLog.class)
+            return type.cast(new WorkLog(restClient, node));
+
+        return null;
     }
 
     /**
@@ -385,15 +481,20 @@ public final class Field {
      *
      * @param s a String instance
      *
-     * @return a String or null if s isn't a String instance
+     * @return a String or null if s isn't a String instance or JsonNode
      */
     public static String getString(Object s) {
-        String result = null;
 
-        if (s instanceof String)
-            result = (String)s;
+        if (s instanceof String) {
+            return (String) s;
+        } else if (s instanceof JsonNode) {
+            JsonNode node = (JsonNode) s;
+            if (node.isTextual()) {
+                return node.asText();
+            }
+        }
 
-        return result;
+        return null;
     }
 
     /**
@@ -404,12 +505,15 @@ public final class Field {
      * @return a list of strings found in sa
      */
     public static List<String> getStringArray(Object sa) {
-        List<String> results = new ArrayList<String>();
+        List<String> results = new ArrayList<>();
 
-        if (sa instanceof JSONArray) {
-            for (Object s : (JSONArray)sa) {
-                if (s instanceof String)
-                    results.add((String)s);
+        if (sa instanceof JsonNode) {
+            JsonNode arrayNode = (JsonNode) sa;
+            if (arrayNode.isArray()) {
+                for (JsonNode  node : arrayNode) {
+                    if (node.isTextual())
+                        results.add(node.asText());
+                }
             }
         }
 
@@ -421,20 +525,23 @@ public final class Field {
      *
      * @param type Resource data type
      * @param ra a JSONArray instance
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      *
      * @return a list of Resources found in ra
      */
     public static <T extends Resource> List<T> getResourceArray(
-        Class<T> type, Object ra, RestClient restclient) {
+        Class<T> type, Object ra, RestClient restClient) {
 
-        List<T> results = new ArrayList<T>();
+        List<T> results = new ArrayList<>();
 
-        if (ra instanceof JSONArray) {
-            for (Object v : (JSONArray)ra) {
-                T item = getResource(type, v, restclient);
-                if (item != null)
-                    results.add(item);
+        if (ra instanceof JsonNode) {
+            JsonNode arrayNode = (JsonNode) ra;
+            if (arrayNode.isArray()) {
+                for (JsonNode node : arrayNode) {
+                    T item = getResource(type, node, restClient);
+                    if (item != null)
+                        results.add(item);
+                }
             }
         }
 
@@ -451,8 +558,12 @@ public final class Field {
     public static TimeTracking getTimeTracking(Object tt) {
         TimeTracking result = null;
 
-        if (tt instanceof JSONObject && !((JSONObject)tt).isNullObject())
-            result = new TimeTracking((JSONObject)tt);
+        if (tt instanceof JsonNode) {
+            JsonNode node = (JsonNode) tt;
+            if (!node.isNull()) {
+                result = new TimeTracking(node);
+            }
+        }
 
         return result;
     }
@@ -461,28 +572,27 @@ public final class Field {
      * Extracts field metadata from an editmeta JSON object.
      *
      * @param name Field name
-     * @param editmeta Edit metadata JSON object
+     * @param editMeta Edit metadata JSON object
      *
      * @return a Meta instance with field metadata
      *
      * @throws JiraException when the field is missing or metadata is bad
      */
-    public static Meta getFieldMetadata(String name, JSONObject editmeta)
-        throws JiraException {
-
-        if (editmeta.isNullObject() || !editmeta.containsKey(name))
+    public static Meta getFieldMetadata(String name, JsonNode editMeta) throws JiraException {
+        if (editMeta == null || editMeta.isNull() || !editMeta.has(name)) {
             throw new JiraException("Field '" + name + "' does not exist or read-only");
+        }
 
-        Map f = (Map)editmeta.get(name);
+        JsonNode f = editMeta.get(name);
         Meta m = new Meta();
 
         m.required = Field.getBoolean(f.get("required"));
         m.name = Field.getString(f.get("name"));
 
-        if (!f.containsKey("schema"))
+        if (!f.has("schema"))
             throw new JiraException("Field '" + name + "' is missing schema metadata");
 
-        Map schema = (Map)f.get("schema");
+        JsonNode schema = f.get("schema");
 
         m.type = Field.getString(schema.get("type"));
         m.items = Field.getString(schema.get("items"));
@@ -521,47 +631,52 @@ public final class Field {
      *
      * @return a JSON-encoded array of items
      */
-    public static JSONArray toArray(Iterable iter, String type, String custom) throws JiraException {
-        JSONArray results = new JSONArray();
-
+    public static ArrayNode toArray(Iterable<?> iter, String type, String custom) throws JiraException {
         if (type == null)
             throw new JiraException("Array field metadata is missing item type");
 
+        ObjectMapper mapper = new ObjectMapper();
+        ArrayNode results = mapper.createArrayNode();
+
         for (Object val : iter) {
             Operation oper = null;
-            Object realValue = null;
-            Object realResult = null;
+            Object realValue;
 
             if (val instanceof Operation) {
-                oper = (Operation)val;
+                oper = (Operation) val;
                 realValue = oper.value;
             } else
                 realValue = val;
 
+            JsonNode realResult = null;
+
             if (type.equals("component") || type.equals("group") ||
                 type.equals("user") || type.equals("version")) {
 
-                JSONObject itemMap = new JSONObject();
+                ObjectNode itemMap = mapper.createObjectNode();
 
                 if (realValue instanceof ValueTuple) {
-                    ValueTuple tuple = (ValueTuple)realValue;
+                    ValueTuple tuple = (ValueTuple) realValue;
                     itemMap.put(tuple.type, tuple.value.toString());
                 } else
                     itemMap.put(ValueType.NAME.toString(), realValue.toString());
 
                 realResult = itemMap;
+
             } else if (type.equals("string") && custom != null
                     && (custom.equals("com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes") ||
                     custom.equals("com.atlassian.jira.plugin.system.customfieldtypes:multiselect"))) {
-                
-                realResult = new JSONObject();
-                ((JSONObject)realResult).put(ValueType.VALUE.toString(), realValue.toString());
+
+                ObjectNode valueObj = mapper.createObjectNode();
+                valueObj.put(ValueType.VALUE.toString(), realValue.toString());
+                realResult = valueObj;
+
             } else if (type.equals("string"))
-                realResult = realValue.toString();
+                realResult = new TextNode(realValue.toString());
 
             if (oper != null) {
-                JSONObject operMap = new JSONObject();
-                operMap.put(oper.name, realResult);
+                ObjectNode operMap = mapper.createObjectNode();
+                operMap.set(oper.name, realResult);
                 results.add(operMap);
             } else
                 results.add(realResult);
@@ -575,95 +690,109 @@ public final class Field {
      *
      * @param name Field name
      * @param value New field value
-     * @param editmeta Edit metadata JSON object
+     * @param editMeta Edit metadata JSON object
      *
      * @return a JSON-encoded field value
      *
      * @throws JiraException when a value is bad or field has invalid metadata
      * @throws UnsupportedOperationException when a field type isn't supported
      */
-    public static Object toJson(String name, Object value, JSONObject editmeta)
+    public static Object toJson(String name, Object value, JsonNode editMeta)
         throws JiraException, UnsupportedOperationException {
 
-        Meta m = getFieldMetadata(name, editmeta);
+        Meta m = getFieldMetadata(name, editMeta);
         if (m.type == null)
             throw new JiraException("Field '" + name + "' is missing metadata type");
 
-        if (m.type.equals("array")) {
-            if (value == null)
-                value = new ArrayList();
-            else if (!(value instanceof Iterable))
-                throw new JiraException("Field '" + name + "' expects an Iterable value");
+        ObjectMapper mapper = new ObjectMapper();
 
-            return toArray((Iterable)value, m.items, m.custom);
-        } else if (m.type.equals("date")) {
-            if (value == null)
-                return JSONNull.getInstance();
+        switch (m.type) {
+            case "array":
+                if (value == null)
+                    value = new ArrayList<>();
+                else if (!(value instanceof Iterable))
+                    throw new JiraException("Field '" + name + "' expects an Iterable value");
 
-            Date d = toDate(value);
-            if (d == null)
-                throw new JiraException("Field '" + name + "' expects a date value or format is invalid");
+                return toArray((Iterable<?>) value, m.items, m.custom);
 
-            SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
-            return df.format(d);
-        } else if (m.type.equals("datetime")) {
-            if (value == null)
-                return JSONNull.getInstance();
-            else if (!(value instanceof Timestamp))
-                throw new JiraException("Field '" + name + "' expects a Timestamp value");
+            case "date":
+                if (value == null)
+                    return NullNode.getInstance();
 
-            SimpleDateFormat df = new SimpleDateFormat(DATETIME_FORMAT);
-            return df.format(value);
-        } else if (m.type.equals("issuetype") || m.type.equals("priority") ||
-                m.type.equals("user") || m.type.equals("resolution")) {
-            JSONObject json = new JSONObject();
+                Date d = toDate(value);
+                if (d == null)
+                    throw new JiraException("Field '" + name + "' expects a date value or format is invalid");
 
-            if (value == null)
-                return JSONNull.getInstance();
-            else if (value instanceof ValueTuple) {
-                ValueTuple tuple = (ValueTuple)value;
-                json.put(tuple.type, tuple.value.toString());
-            } else
-                json.put(ValueType.NAME.toString(), value.toString());
+                SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
+                return new TextNode(df.format(d));
 
-            return json.toString();
-        } else if (m.type.equals("project") || m.type.equals("issuelink")) {
-            JSONObject json = new JSONObject();
+            case "datetime":
+                if (value == null)
+                    return NullNode.getInstance();
+                else if (!(value instanceof Timestamp))
+                    throw new JiraException("Field '" + name + "' expects a Timestamp value");
 
-            if (value == null)
-                return JSONNull.getInstance();
-            else if (value instanceof ValueTuple) {
-                ValueTuple tuple = (ValueTuple)value;
-                json.put(tuple.type, tuple.value.toString());
-            } else
-                json.put(ValueType.ID_NUMBER.toString(), value.toString());
+                SimpleDateFormat df2 = new SimpleDateFormat(DATETIME_FORMAT);
+                return new TextNode(df2.format(value));
 
-            return json.toString();
-        } else if (m.type.equals("string") || (m.type.equals("securitylevel"))) {
-            if (value == null)
-                return "";
-            else if (value instanceof List)
-                return toJsonMap((List)value);
-            else if (value instanceof ValueTuple) {
-                JSONObject json = new JSONObject();
-                ValueTuple tuple = (ValueTuple)value;
-                json.put(tuple.type, tuple.value.toString());
-                return json.toString();
-            }
+            case "issuetype":
+            case "priority":
+            case "user":
+            case "resolution":
+                ObjectNode namedJson = mapper.createObjectNode();
 
-            return value.toString();
-        } else if (m.type.equals("timetracking")) {
-            if (value == null)
-                return JSONNull.getInstance();
-            else if (value instanceof TimeTracking)
-                return ((TimeTracking) value).toJsonObject();
-        } else if (m.type.equals("number")) {
-            if(!(value instanceof java.lang.Integer) && !(value instanceof java.lang.Double) && !(value 
-                    instanceof java.lang.Float) && !(value instanceof java.lang.Long) )
-            {
-                throw new JiraException("Field '" + name + "' expects a Numeric value");
-            }
-            return value;
+                if (value == null)
+                    return NullNode.getInstance();
+                else if (value instanceof ValueTuple) {
+                    ValueTuple tuple = (ValueTuple)value;
+                    namedJson.set(tuple.type, mapper.valueToTree(tuple.value));
+                } else
+                    namedJson.put(ValueType.NAME.toString(), value.toString());
+
+                return namedJson;
+
+            case "project":
+            case "issuelink":
+                ObjectNode idJson = mapper.createObjectNode();
+
+                if (value == null)
+                    return NullNode.getInstance();
+                else if (value instanceof ValueTuple) {
+                    ValueTuple tuple = (ValueTuple) value;
+                    idJson.set(tuple.type, mapper.valueToTree(tuple.value));
+                } else
+                    idJson.put(ValueType.ID_NUMBER.toString(), value.toString());
+
+                return idJson;
+
+            case "string":
+            case "securitylevel":
+                if (value == null)
+                    return TextNode.valueOf("");
+                else if (value instanceof List)
+                    return toJsonMap((List<?>)value);
+                else if (value instanceof ValueTuple) {
+                    ValueTuple tuple = (ValueTuple) value;
+                    ObjectNode json = mapper.createObjectNode();
+                    json.set(tuple.type, mapper.valueToTree(tuple.value));
+                    return json;
+                }
+
+                return TextNode.valueOf(value.toString());
+
+            case "timetracking":
+                if (value == null)
+                    return NullNode.getInstance();
+                else if (value instanceof TimeTracking)
+                    return ((TimeTracking) value).toJsonNode();
+                break;
+
+            case "number":
+                if(!(value instanceof Integer) && !(value instanceof Double) && !(value
+                        instanceof Float) && !(value instanceof Long) ) {
+                    throw new JiraException("Field '" + name + "' expects a Numeric value");
+                }
+                return mapper.valueToTree(value);
         }
 
         throw new UnsupportedOperationException(m.type + " is not a supported field type");
@@ -676,8 +805,9 @@ public final class Field {
      *
      * @return a JSON-encoded map
      */
-    public static Object toJsonMap(List list) {
-        JSONObject json = new JSONObject();
+    public static JsonNode toJsonMap(List<?> list) {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode json = mapper.createObjectNode();
 
         for (Object item : list) {
             if (item instanceof ValueTuple) {
@@ -687,7 +817,7 @@ public final class Field {
                 json.put(ValueType.VALUE.toString(), item.toString());
         }
 
-        return json.toString();
+        return json;
     }
 
     /**

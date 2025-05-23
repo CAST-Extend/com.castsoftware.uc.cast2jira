@@ -17,21 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient.greenhopper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.rcarz.jiraclient.Field;
 import net.rcarz.jiraclient.JiraException;
 import net.rcarz.jiraclient.RestClient;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import net.sf.json.JSON;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import java.util.*;
 
 /**
  * GreenHopper backlog data.
@@ -58,70 +54,53 @@ public class Backlog {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected Backlog(RestClient restclient, JSONObject json) {
+    protected Backlog(RestClient restclient, JsonNode json) {
         this.restclient = restclient;
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
+    private void deserialize(JsonNode json) {
+        issues = GreenHopperField.getResourceArray(SprintIssue.class, json.get("issues"), restclient);
+        rankCustomFieldId = Field.getInteger(json.get("rankCustomFieldId"));
+        sprints = GreenHopperField.getResourceArray(Sprint.class, json.get("sprints"), restclient);
+        projects = GreenHopperField.getResourceArray(RapidViewProject.class, json.get("projects"), restclient);
+        markers = GreenHopperField.getResourceArray(Marker.class, json.get("markers"), restclient);
+        canManageSprints = Field.getBoolean(json.get("canManageSprints"));
+        maxIssuesExceeded = Field.getBoolean(json.get("maxIssuesExceeded"));
+        queryResultLimit = Field.getInteger(json.get("queryResultLimit"));
 
-        issues = GreenHopperField.getResourceArray(
-            SprintIssue.class,
-            map.get("issues"),
-            restclient);
-        rankCustomFieldId = Field.getInteger(map.get("rankCustomFieldId"));
-        sprints = GreenHopperField.getResourceArray(
-            Sprint.class,
-            map.get("sprints"),
-            restclient);
-        projects = GreenHopperField.getResourceArray(
-            RapidViewProject.class,
-            map.get("projects"),
-            restclient);
-        markers = GreenHopperField.getResourceArray(
-            Marker.class,
-            map.get("markers"),
-            restclient);
-        canManageSprints = Field.getBoolean(map.get("canManageSprints"));
-        maxIssuesExceeded = Field.getBoolean(map.get("maxIssuesExceeded"));
-        queryResultLimit = Field.getInteger(map.get("queryResultLimit"));
-
-        if (map.containsKey("epicData") && map.get("epicData") instanceof JSONObject) {
-            Map epicData = (Map)map.get("epicData");
+        if (json.has("epicData") && json.get("epicData").isObject()) {
+            JsonNode epicData = json.get("epicData");
 
             epics = GreenHopperField.getResourceArray(Epic.class, epicData.get("epics"), restclient);
             canEditEpics = Field.getBoolean(epicData.get("canEditEpics"));
         }
 
-        if (map.containsKey("versionData") && map.get("versionData") instanceof JSONObject) {
-            Map verData = (JSONObject)map.get("versionData");
+        if(json.has("versionData") && json.get("versionData").isObject()) {
+            JsonNode verData = json.get("versionData");
+            JsonNode versionsPerProjectNode = verData.get("versionsPerProject");
 
-            if (verData.containsKey("versionsPerProject") &&
-                verData.get("versionsPerProject") instanceof JSONObject) {
+            if (versionsPerProjectNode != null && versionsPerProjectNode.isObject()) {
 
-                Map verMap = (Map)verData.get("versionsPerProject");
-                versionsPerProject = new HashMap<String, List<RapidViewVersion>>();
+                versionsPerProject = new HashMap<>();
 
-                for (Map.Entry<String, Object> kvp : 
-                     (Iterable<Map.Entry<String, Object>>)verMap.entrySet()) {
+                Iterator<String> fieldNames = versionsPerProjectNode.fieldNames();
+                while (fieldNames.hasNext()) {
+                    String projectKey = fieldNames.next();
+                    JsonNode versionsArray = versionsPerProjectNode.get(projectKey);
 
-                    if (!(kvp.getValue() instanceof JSONArray))
-                        continue;
+                    if (versionsArray.isArray()) {
+                        List<RapidViewVersion> versions = new ArrayList<>();
 
-                    List<RapidViewVersion> versions = new ArrayList<RapidViewVersion>();
+                        for (JsonNode verNode : versionsArray) {
+                            versions.add(new RapidViewVersion(restclient, verNode));
+                        }
 
-                    for (Object item : (JSONArray)kvp.getValue()) {
-                        if (!(item instanceof JSONObject))
-                            continue;
-
-                        RapidViewVersion ver = new RapidViewVersion(restclient, (JSONObject)item);
-                        versions.add(ver);
+                        versionsPerProject.put(projectKey, versions);
                     }
 
-                    versionsPerProject.put(kvp.getKey(), versions);
                 }
             }
         }
@@ -149,34 +128,34 @@ public class Backlog {
     /**
      * Retrieves the backlog data for the given rapid view.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param rv Rapid View instance
      *
      * @return the backlog
      *
      * @throws JiraException when the retrieval fails
      */
-    public static Backlog get(RestClient restclient, RapidView rv)
+    public static Backlog get(RestClient restClient, RapidView rv)
         throws JiraException {
 
         final int rvId = rv.getId();
-        JSON result = null;
+        JsonNode result;
 
         try {
-            URI reporturi = restclient.buildURI(
+            URI reporturi = restClient.buildURI(
                 GreenHopperResource.RESOURCE_URI + "xboard/plan/backlog/data",
                 new HashMap<String, String>() {{
                     put("rapidViewId", Integer.toString(rvId));
                 }});
-            result = restclient.get(reporturi);
+            result = restClient.get(reporturi);
         } catch (Exception ex) {
             throw new JiraException("Failed to retrieve backlog data", ex);
         }
 
-        if (!(result instanceof JSONObject))
+        if (result == null || !result.isObject())
             throw new JiraException("JSON payload is malformed");
 
-        return new Backlog(restclient, (JSONObject)result);
+        return new Backlog(restClient, result);
     }
 
     public List<SprintIssue> getIssues() {

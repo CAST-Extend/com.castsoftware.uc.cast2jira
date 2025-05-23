@@ -1,15 +1,15 @@
+/* Update MMA 2025-05-20: use of Jackson for JSON handling and replacement of PowerMock by Mockito */
+
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.modules.junit4.PowerMockRunner;
 
+import static org.mockito.Mockito.*;
 import static junit.framework.Assert.*;
-import static org.mockito.Matchers.anyString;
 
-@RunWith(PowerMockRunner.class)
 public class VotesTest {
 
     @Test
@@ -19,44 +19,49 @@ public class VotesTest {
 
     @Test
     public void testVoteMap() throws Exception {
-        final JSONObject json = new JSONObject();
-        json.put("self","someURL");
-        json.put("id","1111");
-        json.put("votes",12);
-        json.put("hasVoted",true);
-        Votes votes = new Votes(null, json);
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode node = mapper.createObjectNode();
+
+        node.put("self","someURL");
+        node.put("id","1111");
+        node.put("votes",12);
+        node.put("hasVoted",true);
+
+        Votes votes = new Votes(null, node);
 
         assertTrue(votes.hasVoted());
         assertEquals("1111",votes.getId());
         assertEquals(12,votes.getVotes());
         assertEquals("someURL",votes.getSelf());
-
     }
 
     @Test(expected = JiraException.class)
     public void testJiraExceptionFromRestException() throws Exception {
-        final RestClient mockRestClient = PowerMockito.mock(RestClient.class);
-        PowerMockito.when(mockRestClient.get(anyString())).thenThrow(RestException.class);
+        RestClient mockRestClient = mock(RestClient.class);
+        when(mockRestClient.get(anyString())).thenThrow(RestException.class);
         Votes.get(mockRestClient, "issueNumber");
     }
 
     @Test(expected = JiraException.class)
     public void testJiraExceptionFromNonJSON() throws Exception {
-        final RestClient mockRestClient = PowerMockito.mock(RestClient.class);
+        RestClient mockRestClient = mock(RestClient.class);
+        // Return null or invalid JSON
+        when(mockRestClient.get(anyString())).thenReturn(null);
         Votes.get(mockRestClient,"issueNumber");
     }
 
     @Test
     public void testGetVotesFromID() throws Exception {
-        final RestClient mockRestClient = PowerMockito.mock(RestClient.class);
-        final JSONObject returnedFromService = new JSONObject();
+        RestClient mockRestClient = mock(RestClient.class);
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode returnedFromService = mapper.createObjectNode();
 
         returnedFromService.put("self", "someURL");
         returnedFromService.put("id", "1111");
         returnedFromService.put("votes", 12);
         returnedFromService.put("hasVoted", true);
 
-        PowerMockito.when(mockRestClient.get(anyString())).thenReturn(returnedFromService);
+        when(mockRestClient.get(anyString())).thenReturn(returnedFromService);
 
         final Votes votes = Votes.get(mockRestClient, "issueNumber");
 
@@ -64,7 +69,6 @@ public class VotesTest {
         assertEquals("1111",votes.getId());
         assertEquals(12,votes.getVotes());
         assertEquals("someURL",votes.getSelf());
-
     }
 
     @Test
@@ -72,30 +76,36 @@ public class VotesTest {
         Votes votes = new Votes(null,getTestJSON());
 
         assertFalse(votes.hasVoted());
-        assertEquals(votes.getId(),"10");
-        assertEquals(votes.getVotes(),0);
-        assertEquals(votes.getSelf(),"https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/votes");
+        assertEquals("10", votes.getId());
+        assertEquals(0, votes.getVotes());
+        assertEquals("https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/votes", votes.getSelf());
     }
 
     @Test
     public void testGetToString(){
-        final JSONObject json = new JSONObject();
-        json.put("self","someURL");
-        json.put("id","1111");
-        json.put("votes",12);
-        json.put("hasVoted",true);
-        Votes votes = new Votes(null, json);
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode node = mapper.createObjectNode();
 
-        assertEquals(votes.toString(),"12");
+        node.put("self","someURL");
+        node.put("id","1111");
+        node.put("votes",12);
+        node.put("hasVoted",true);
+
+        Votes votes = new Votes(null, node);
+
+        assertEquals("12", votes.toString());
     }
 
-    private JSONObject getTestJSON() {
-        JSONObject jsonObject = new JSONObject();
+    private JsonNode getTestJSON() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode node = mapper.createObjectNode();
 
-        jsonObject.put("self","https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/votes");
-        jsonObject.put("votes",0);
-        jsonObject.put("hasVoted",false);
-        jsonObject.put("id","10");
-        return jsonObject;
+        node.put("self","https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/votes");
+        node.put("votes",0);
+        node.put("hasVoted",false);
+        node.put("id","10");
+
+        return node;
     }
+
 }

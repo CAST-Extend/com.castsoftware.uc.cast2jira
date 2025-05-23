@@ -17,20 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of httpclient5 and Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
-import java.util.Map;
 
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
 
 /**
  * Represents an issue attachment.
@@ -48,26 +48,24 @@ public class Attachment extends Resource {
      * Creates an attachment from a JSON payload.
      *
      * @param restclient REST client instance
-     * @param json JSON payload
+     * @param json JSON payload (Jackson JsonNode)
      */
-    protected Attachment(RestClient restclient, JSONObject json) {
+    protected Attachment(RestClient restclient, JsonNode json) {
         super(restclient);
 
         if (json != null)
             deserialise(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        self = Field.getString(map.get("self"));
-        id = Field.getString(map.get("id"));
-        author = Field.getResource(User.class, map.get("author"), restclient);
-        filename = Field.getString(map.get("filename"));
-        created = Field.getDate(map.get("created"));
-        size = Field.getInteger(map.get("size"));
-        mimeType = Field.getString(map.get("mimeType"));
-        content = Field.getString(map.get("content"));
+    private void deserialise(JsonNode json) {
+        self = Field.getString(json.get("self"));
+        id = Field.getString(json.get("id"));
+        author = Field.getResource(User.class, json.get("author"), restclient);
+        filename = Field.getString(json.get("filename"));
+        created = Field.getDate(json.get("created"));
+        size = Field.getInteger(json.get("size"));
+        mimeType = Field.getString(json.get("mimeType"));
+        content = Field.getString(json.get("content"));
     }
 
     /**
@@ -83,7 +81,7 @@ public class Attachment extends Resource {
     public static Attachment get(RestClient restclient, String id)
         throws JiraException {
 
-        JSON result = null;
+        JsonNode result = null;
 
         try {
             result = restclient.get(getBaseUri() + "attachment/" + id);
@@ -91,10 +89,10 @@ public class Attachment extends Resource {
             throw new JiraException("Failed to retrieve attachment " + id, ex);
         }
 
-        if (!(result instanceof JSONObject))
+        if (result == null || !result.isObject())
             throw new JiraException("JSON payload is malformed");
 
-        return new Attachment(restclient, (JSONObject)result);
+        return new Attachment(restclient, result);
     }
     
     /**
@@ -107,20 +105,21 @@ public class Attachment extends Resource {
     public byte[] download() 
     	throws JiraException{
     	ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    	try{
+    	try {
         	HttpGet get = new HttpGet(content);
-        	HttpResponse response = restclient.getHttpClient().execute(get);
+            CloseableHttpResponse response = restclient.getHttpClient().execute(get);
         	HttpEntity entity = response.getEntity();
         	if (entity != null) {
-        	    InputStream inputStream = entity.getContent();
-        	    int next = inputStream.read();
-        	    while (next > -1) {
-        	        bos.write(next);
-        	        next = inputStream.read();
-        	    }
-        	    bos.flush();
+        	    try (InputStream inputStream = entity.getContent()) {
+                    int next = inputStream.read();
+                    while (next > -1) {
+                        bos.write(next);
+                        next = inputStream.read();
+                    }
+                    bos.flush();
+                }
         	}
-    	}catch(IOException e){
+    	} catch(IOException e){
     		  throw new JiraException(String.format("Failed downloading attachment from %s: %s", this.content, e.getMessage()));
     	}
     	return bos.toByteArray();

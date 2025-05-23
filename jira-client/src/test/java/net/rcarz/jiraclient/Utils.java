@@ -1,12 +1,15 @@
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSONObject;
-import net.sf.json.JSONSerializer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Utils {
 
-    public static JSONObject getTestIssue() {
-        JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON("{\n" +
+    static ObjectMapper mapper = new ObjectMapper();
+
+    public static JsonNode getTestIssue() throws JsonProcessingException {
+        String jsonString = "{\n" +
         "  \"expand\": \"renderedFields,names,schema,transitions,operations,editmeta,changelog\",\n" +
         "  \"id\": \"10742\",\n" +
         "  \"self\": \"https://brainbubble.atlassian.net/rest/api/latest/issue/10742\",\n" +
@@ -197,13 +200,13 @@ public class Utils {
         "    \"timeoriginalestimate\": null,\n" +
         "    \"aggregatetimespent\": null\n" +
         "  }\n" +
-        "}");
+        "}";
 
-        return jsonObject;
+        return mapper.readTree(jsonString);
     }
 
-    public static JSONObject getTestIssueWorklogs() {
-        JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON("{\n" +
+    public static JsonNode getTestIssueWorklogs() throws JsonProcessingException {
+        String jsonString = "{\n" +
                 "   \"startAt\":0,\n" +
                 "   \"maxResults\":2,\n" +
                 "   \"total\":2,\n" +
@@ -277,8 +280,8 @@ public class Utils {
                 "         \"id\":\"45518\"\n" +
                 "      }\n" +
                 "   ]\n" +
-                "}");
-        return jsonObject;
+                "}";
+        return mapper.readTree(jsonString);
     }
 
 }

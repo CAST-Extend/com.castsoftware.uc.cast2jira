@@ -249,7 +249,7 @@ public class Constants {
 
 	// Database Providers
 	/** The Constant DB_CSS. */
-	public static final String DB_CSS = "css";
+	public static final String DB_CSS = "css/postgres";
 
 	/** The Constant DB_ORACLE. */
 	public static final String DB_ORACLE = "oracle";

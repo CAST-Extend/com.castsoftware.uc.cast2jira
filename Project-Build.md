@@ -32,11 +32,11 @@ java -jar cli/target/CastToJira.jar -applicationname "YourAppName" \
   -databasehost "YourDatabaseHost" \
   -databaseport "YourDatabasePort" \
   -databasename "YourDatabaseName" \
-  -databaseprovider "CSS" \
-  -databaseschema "YourSchemaName" \
+  -databaseprovider "CSS/Postgres" \
+  -databaseschema "YourSchemaName_central" \
   -jiraissuetype "Bug" \
-  -jiraprojectname "YourJiraProject" \
-  -jirarestapiurl "https://your-jira-instance/rest/api/2/" \
+  -jiraprojectname "YourJiraProjectKey" \
+  -jirarestapiurl "https://your-jira-instance" \
   -jirausername "YourJiraUsername" \
   -jirauserpassword "YourJiraPassword"
 

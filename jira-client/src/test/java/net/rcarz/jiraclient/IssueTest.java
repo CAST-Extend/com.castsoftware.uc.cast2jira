@@ -1,3 +1,5 @@
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
 import static junit.framework.Assert.assertEquals;
@@ -8,9 +10,10 @@ import static org.junit.Assert.assertNotNull;
 import java.util.List;
 import java.util.Map;
 
-import net.sf.json.JSON;
-import net.sf.json.JSONNull;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.NullNode;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Assert;
@@ -22,12 +25,12 @@ public class IssueTest {
      * If no exception thrown the test is passed.
      */
     @Test
-    public void testCreateIssue() {
+    public void testCreateIssue() throws JsonProcessingException {
         new Issue(null, Utils.getTestIssue());
     }
 
     @Test
-    public void testGetIssueStatus() {
+    public void testGetIssueStatus() throws JsonProcessingException {
 
         String statusName = "To Do";
         String statusID = "10004";
@@ -44,21 +47,21 @@ public class IssueTest {
     }
 
     @Test
-    public void getReporter() {
+    public void getReporter() throws JsonProcessingException {
         Issue issue = new Issue(null, Utils.getTestIssue());
         assertNotNull(issue.getReporter());
 
         User reporter = issue.getReporter();
 
-        assertEquals(reporter.getDisplayName(), "Joseph McCarthy");
-        assertEquals(reporter.getName(), "joseph");
+        assertEquals("Joseph McCarthy", reporter.getDisplayName());
+        assertEquals("joseph", reporter.getName());
         assertTrue(reporter.isActive());
-        assertEquals(reporter.getEmail(), "joseph.b.mccarthy2012@googlemail.com");
+        assertEquals("joseph.b.mccarthy2012@googlemail.com", reporter.getEmail());
 
         Map<String, String> avatars = reporter.getAvatarUrls();
 
         assertNotNull(avatars);
-        assertEquals(avatars.size(), 4);
+        assertEquals(4, avatars.size());
 
         assertEquals("https://secure.gravatar.com/avatar/a5a271f9eee8bbb3795f41f290274f8c?d=mm&s=16", avatars.get("16x16"));
         assertEquals("https://secure.gravatar.com/avatar/a5a271f9eee8bbb3795f41f290274f8c?d=mm&s=24", avatars.get("24x24"));
@@ -67,90 +70,95 @@ public class IssueTest {
     }
 
     @Test
-    public void testGetIssueType(){
+    public void testGetIssueType() throws JsonProcessingException {
         Issue issue = new Issue(null, Utils.getTestIssue());
         IssueType issueType = issue.getIssueType();
         assertNotNull(issueType);
 
         assertFalse(issueType.isSubtask());
-        assertEquals(issueType.getName(), "Story");
-        assertEquals(issueType.getId(), "7");
-        assertEquals(issueType.getIconUrl(), "https://brainbubble.atlassian.net/images/icons/issuetypes/story.png");
-        assertEquals(issueType.getDescription(), "This is a test issue type.");
+        assertEquals("Story", issueType.getName());
+        assertEquals("7", issueType.getId());
+        assertEquals("https://brainbubble.atlassian.net/images/icons/issuetypes/story.png", issueType.getIconUrl());
+        assertEquals("This is a test issue type.", issueType.getDescription());
     }
 
     @Test
-    public void testGetVotes(){
+    public void testGetVotes() throws JsonProcessingException {
         Issue issue = new Issue(null, Utils.getTestIssue());
         Votes votes = issue.getVotes();
         assertNotNull(votes);
 
         assertFalse(votes.hasVoted());
-        assertEquals(votes.getVotes(),0);
+        assertEquals(0, votes.getVotes());
     }
 
     @Test
-    public void testGetWatchers(){
+    public void testGetWatchers() throws JsonProcessingException {
         Issue issue = new Issue(null, Utils.getTestIssue());
         Watches watches = issue.getWatches();
 
         assertNotNull(watches);
 
         assertFalse(watches.isWatching());
-        assertEquals(watches.getWatchCount(), 0);
-        assertEquals(watches.getSelf(), "https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/watchers");
+        assertEquals(0, watches.getWatchCount());
+        assertEquals("https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/watchers", watches.getSelf());
     }
 
     @Test
-    public void testGetVersion(){
+    public void testGetVersion() throws JsonProcessingException {
         Issue issue = new Issue(null, Utils.getTestIssue());
         List<Version> versions = issue.getFixVersions();
 
         assertNotNull(versions);
-        assertEquals(versions.size(),1);
+        assertEquals(1, versions.size());
 
         Version version = versions.get(0);
 
-        Assert.assertEquals(version.getId(), "10200");
-        Assert.assertEquals(version.getName(), "1.0");
+        Assert.assertEquals("10200", version.getId());
+        Assert.assertEquals("1.0", version.getName());
         assertFalse(version.isArchived());
         assertFalse(version.isReleased());
-        Assert.assertEquals(version.getReleaseDate(), "2013-12-01");
-        Assert.assertEquals(version.getDescription(), "First Full Functional Build");
+        Assert.assertEquals("2013-12-01", version.getReleaseDate());
+        Assert.assertEquals("First Full Functional Build", version.getDescription());
     }
 
     @Test
-    public void testPlainTimeTracking() {
+    public void testPlainTimeTracking() throws JsonProcessingException {
         Issue issue = new Issue(null,Utils.getTestIssue());
 
-        assertEquals(new Integer(144000), issue.getTimeEstimate());
-        assertEquals(new Integer(86400), issue.getTimeSpent());
+        assertEquals(Integer.valueOf(144000), issue.getTimeEstimate());
+        assertEquals(Integer.valueOf(86400), issue.getTimeSpent());
     }
 
     @Test
-    public void testCreatedDate(){
+    public void testCreatedDate() throws JsonProcessingException {
         Issue issue = new Issue(null,Utils.getTestIssue());
         assertEquals(new DateTime(2013, 9, 29, 20, 16, 19, 854, DateTimeZone.forOffsetHours(1)).toDate(), issue.getCreatedDate());
     }
 
     @Test
-    public void testUpdatedDate(){
+    public void testUpdatedDate() throws JsonProcessingException {
       Issue issue = new Issue(null,Utils.getTestIssue());
       assertEquals(new DateTime(2013, 10, 9, 22, 24, 55, 961, DateTimeZone.forOffsetHours(1)).toDate(), issue.getUpdatedDate());
     }
 
     @Test
-    public void testAddRemoteLink() throws JiraException {
+    public void testAddRemoteLink() throws JiraException, JsonProcessingException {
         final TestableRestClient restClient = new TestableRestClient();
         Issue issue = new Issue(restClient, Utils.getTestIssue());
         issue.addRemoteLink("test-url", "test-title", "test-summary");
         assertEquals("/rest/api/latest/issue/FILTA-43/remotelink", restClient.postPath);
-        assertEquals("{\"object\":{\"url\":\"test-url\",\"title\":\"test-title\",\"summary\":\"test-summary\"}}", restClient.postPayload.toString(0));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String actualPayload = mapper.writeValueAsString(restClient.postPayload);
+
+        String expectedPayload = "{\"object\":{\"url\":\"test-url\",\"title\":\"test-title\",\"summary\":\"test-summary\"}}";
+        assertEquals(expectedPayload, actualPayload);
     }
 
 
     @Test
-    public void testRemoteLink() throws JiraException {
+    public void testRemoteLink() throws JiraException, JsonProcessingException {
         final TestableRestClient restClient = new TestableRestClient();
         Issue issue = new Issue(restClient, Utils.getTestIssue());
         issue.remoteLink()
@@ -163,7 +171,11 @@ public class IssueTest {
                 .status(true, "status-icon", "status-title", "status-url")
                 .create();
         assertEquals("/rest/api/latest/issue/FILTA-43/remotelink", restClient.postPath);
-        assertEquals(
+
+        ObjectMapper mapper = new ObjectMapper();
+        String actualPayload = mapper.writeValueAsString(restClient.postPayload);
+
+        String expectedPayload =
                 "{\"globalId\":\"gid\"," +
                 "\"application\":" +
                         "{\"type\":\"app-type\",\"name\":\"app-name\"}," +
@@ -174,24 +186,25 @@ public class IssueTest {
                         "\"summary\":\"summary\"," +
                         "\"icon\":" +
                             "{\"url16x16\":\"icon\",\"title\":\"icon-url\"}," +
-                        "\"status\":{\"resolved\":\"true\",\"icon\":" +
+                        "\"status\":{\"resolved\":true,\"icon\":" +
                             "{\"title\":\"status-title\",\"url16x16\":\"status-icon\",\"link\":\"status-url\"}" +
-                "}}}",
-                restClient.postPayload.toString(0));
+                "}}}";
+
+        assertEquals(expectedPayload, actualPayload);
     }
 
 
     private static class TestableRestClient extends RestClient {
 
         public String postPath = "not called";
-        public JSON postPayload = JSONNull.getInstance();
+        public JsonNode postPayload = NullNode.getInstance();
 
         public TestableRestClient() {
             super(null, null);
         }
 
         @Override
-        public JSON post(String path, JSON payload) {
+        public JsonNode post(String path, JsonNode payload) {
             postPath = path;
             postPayload = payload;
             return null;

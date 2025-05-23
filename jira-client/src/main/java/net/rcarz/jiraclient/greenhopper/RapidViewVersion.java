@@ -17,16 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient.greenhopper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.rcarz.jiraclient.Field;
 import net.rcarz.jiraclient.JiraException;
 import net.rcarz.jiraclient.RestClient;
 import net.rcarz.jiraclient.Version;
-
-import java.util.Map;
-
-import net.sf.json.JSONObject;
 
 /**
  * Represents a GreenHopper JIRA project version.
@@ -43,20 +42,18 @@ public class RapidViewVersion extends GreenHopperResource {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected RapidViewVersion(RestClient restclient, JSONObject json) {
+    protected RapidViewVersion(RestClient restclient, JsonNode json) {
         super(restclient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        id = Field.getInteger(map.get("id"));
-        name = Field.getString(map.get("name"));
-        sequence = Field.getInteger(map.get("sequence"));
-        released = Field.getBoolean(map.get("released"));
+    private void deserialize(JsonNode json) {
+        id = Field.getInteger(json.get("id"));
+        name = Field.getString(json.get("name"));
+        sequence = Field.getInteger(json.get("sequence"));
+        released = Field.getBoolean(json.get("released"));
     }
 
     /**

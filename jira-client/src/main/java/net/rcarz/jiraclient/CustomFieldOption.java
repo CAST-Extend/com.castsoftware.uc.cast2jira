@@ -17,12 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
+import java.util.Map;
 
 /**
  * Represents an custom field option.
@@ -34,49 +35,47 @@ public class CustomFieldOption extends Resource {
     /**
      * Creates a custom field option from a JSON payload.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param json JSON payload
      */
-    protected CustomFieldOption(RestClient restclient, JSONObject json) {
-        super(restclient);
+    protected CustomFieldOption(RestClient restClient, JsonNode json) {
+        super(restClient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        self = Field.getString(map.get("self"));
-        id = Field.getString(map.get("id"));
-        value = Field.getString(map.get("value"));
+    private void deserialize(JsonNode json) {
+        self = Field.getString(json.get("self"));
+        id = Field.getString(json.get("id"));
+        value = Field.getString(json.get("value"));
     }
 
     /**
      * Retrieves the given custom field option record.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param id Internal JIRA ID of the custom field option
      *
      * @return a custom field option instance
      *
      * @throws JiraException when the retrieval fails
      */
-    public static CustomFieldOption get(RestClient restclient, String id)
+    public static CustomFieldOption get(RestClient restClient, String id)
         throws JiraException {
 
-        JSON result = null;
+        JsonNode result;
 
         try {
-            result = restclient.get(getBaseUri() + "customFieldOption/" + id);
+            result = restClient.get(getBaseUri() + "customFieldOption/" + id);
         } catch (Exception ex) {
             throw new JiraException("Failed to retrieve custom field option " + id, ex);
         }
 
-        if (!(result instanceof JSONObject))
+        if (result == null || !result.isObject())
             throw new JiraException("JSON payload is malformed");
 
-        return new CustomFieldOption(restclient, (JSONObject)result);
+        return new CustomFieldOption(restClient, result);
     }
 
     @Override

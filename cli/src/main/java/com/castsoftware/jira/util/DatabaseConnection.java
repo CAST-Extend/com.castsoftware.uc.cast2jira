@@ -56,14 +56,12 @@ public class DatabaseConnection {
 	 *            the database port
 	 * @param databaseProvider
 	 *            the database provider
-	 * @throws Exception
-	 *             the exception
 	 * @throws SQLException
 	 *             the SQL exception
 	 */
 	public DatabaseConnection(String databaseUser, String databasePassword,
 			String databaseHost, String databaseName, String databasePort,
-			String databaseProvider) throws  SQLException {
+			String databaseProvider) throws SQLException {
 		setDatabaseUser(databaseUser);
 		setDatabasePassword(databasePassword);
 		setDatabaseHost(databaseHost);
@@ -73,20 +71,19 @@ public class DatabaseConnection {
 
 		log.debug("Staring " + getDatabaseProvider() + " JDBC Connection");
 		try {
-			if (getDatabaseProvider().toLowerCase().equals(Constants.DB_CSS)) {
+			if (getDatabaseProvider().equalsIgnoreCase(Constants.DB_CSS)) {
 				Class.forName(Constants.DB_JDBC_DRIVER_CSS);
-			} else if (getDatabaseProvider().toLowerCase().equals(
+			} else if (getDatabaseProvider().equalsIgnoreCase(
 					Constants.DB_ORACLE)) {
 				Class.forName(Constants.DB_JDBC_DRIVER_ORACLE);
-			} else if (getDatabaseProvider().toLowerCase().equals(
+			} else if (getDatabaseProvider().equalsIgnoreCase(
 					Constants.DB_SQLSERVER)) {
 				Class.forName(Constants.DB_JDBC_DRIVER_SQLSERVER);
 			}
 			log.debug(getDatabaseProvider() + " JDBC Driver Registered!");
 			setCreateDBConnection();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.debug(e.getMessage());
 		} 
 	}
 
@@ -107,62 +104,49 @@ public class DatabaseConnection {
 	 */
 	public void setCreateDBConnection() throws SQLException {
 		try {
-			StringBuffer connectionString = new StringBuffer();
-			if (getDatabaseProvider().toLowerCase().equals(Constants.DB_CSS)) {
+			StringBuilder connectionString = new StringBuilder();
+			if (getDatabaseProvider().equalsIgnoreCase(Constants.DB_CSS)) {
 				connectionString.append(Constants.DB_CONN_STRING_CSS);
-			} else if (getDatabaseProvider().toLowerCase().equals(
-					Constants.DB_ORACLE)) {
+			} else if (getDatabaseProvider().equalsIgnoreCase(Constants.DB_ORACLE)) {
 				connectionString.append(Constants.DB_CONN_STRING_ORACLE);
-			} else if (getDatabaseProvider().toLowerCase().equals(
-					Constants.DB_SQLSERVER)) {
+			} else if (getDatabaseProvider().equalsIgnoreCase(Constants.DB_SQLSERVER)) {
 				connectionString.append(Constants.DB_CONN_STRING_SQLSERVER);
 			}
-			// connectionString.append("jdbc:postgresql://");
+
 			connectionString.append(getDatabaseHost());
 			connectionString.append(":");
 			connectionString.append(getDatabasePort());
-			if (getDatabaseProvider().toLowerCase().equals(Constants.DB_ORACLE)) {
+
+			if (getDatabaseProvider().equalsIgnoreCase(Constants.DB_ORACLE)) {
 				connectionString.append(":");
 			} else {
 				connectionString.append("/");
 			}
 			connectionString.append(getDatabaseName());
 
-			// ("jdbc:oracle:thin:@myhost:1521:orcl", "scott", "tiger");
-			// jdbc:jtds:<server_type>://<server>[:<port>][/<database>][;<property>=<value>[;...]]
-			// jdbc:jtds:sqlserver://neptune.acme.com:1433/test
-
-			//Added by AKU 
-			// Append PostgreSQL connection parameters to support AWS RDS SCRAM auth
+			//Added by AKU - Modified by MMA to handle no SSL connections (local or same network),
+			// or SSL connections (AWS RDS SCRAM auth)
+			// with sslmode=prefer the driver will try SSL first, and fallback to non-SSL if not supported
         	if (getDatabaseProvider().equalsIgnoreCase(Constants.DB_CSS)) {
-              connectionString.append("?ssl=true&gssEncMode=disable");
+				connectionString.append("?sslmode=prefer");
         	}
 
-			if (log.isDebugEnabled())
-			{
-				log.debug("setCreateDBConnection() - Connection String: "
-						+ connectionString.toString());
+			if (log.isDebugEnabled()) {
+				log.debug("setCreateDBConnection() - Connection String: " + connectionString);
 			}
-			// connection =
-			// DriverManager.getConnection("jdbc:postgresql://"+databaseHost
-			// +":"+databasePort+"/"+databaseName,
-			// databaseUser,databasePassword);
-			connection = DriverManager.getConnection(
-					connectionString.toString(), getDatabaseUser(),
-					getDatabasePassword());
+
+			connection = DriverManager.getConnection(connectionString.toString(), getDatabaseUser(), getDatabasePassword());
 		} catch (SQLException e) {
 			log.fatal("setCreateDBConnection() - Connection Failed! Check output log file"
 					+ e.getMessage());
 			throw e;
 		}
+
 		log.debug(" setCreateDBConnection() - Connection done!");
 	}
 
 	/**
 	 * Close connection.
-	 * 
-	 * @param connection
-	 *            the connection
 	 */
 	public void closeConnection() {
 		Connection connection = getDBConnection();

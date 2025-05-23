@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project name="maven-antrun-" default="main">
-  <target name="main">
-    <mkdir dir="D:\CAST\Development\CAST\com.castsoftware.uc.cast2jira\jenkins\target/tmp" />
-  </target>
-</project>

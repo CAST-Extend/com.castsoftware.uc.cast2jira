@@ -17,14 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient.greenhopper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.rcarz.jiraclient.Field;
 import net.rcarz.jiraclient.RestClient;
-
-import java.util.Map;
-
-import net.sf.json.JSONObject;
 
 /**
  * Represents a GreenHopper sprint issue.
@@ -40,18 +39,16 @@ public class SprintIssue extends GreenHopperIssue {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected SprintIssue(RestClient restclient, JSONObject json) {
+    protected SprintIssue(RestClient restclient, JsonNode json) {
         super(restclient, json);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        epic = Field.getString(map.get("epic"));
-        estimateStatistic = GreenHopperField.getEstimateStatistic(map.get("estimateStatistic"));
+    private void deserialize(JsonNode json) {
+        epic = Field.getString(json.get("epic"));
+        estimateStatistic = GreenHopperField.getEstimateStatistic(json.get("estimateStatistic"));
     }
 
     public String getEpic() {

@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-package net.rcarz.jiraclient;
+/* Update MMA 2025-05-19: use of httpclient5 */
 
-import java.lang.Throwable;
+package net.rcarz.jiraclient;
 
 /**
  * An exception for JIRA REST errors.
@@ -28,7 +28,7 @@ public class RestException extends Exception {
 
     private int status;
     private String result;
-    private org.apache.http.Header[] headers;
+    private org.apache.hc.core5.http.Header[] headers;
 
     public RestException(String msg, int status, String result) {
         super(msg);
@@ -37,7 +37,7 @@ public class RestException extends Exception {
         this.result = result;
     }
 
-    public RestException(String msg, int status, String result, org.apache.http.Header[] headers) {
+    public RestException(String msg, int status, String result, org.apache.hc.core5.http.Header[] headers) {
         super(msg);
         
         this.status = status;
@@ -53,7 +53,7 @@ public class RestException extends Exception {
         return result;
     }
 
-    public org.apache.http.Header[] getHeaders() {
+    public org.apache.hc.core5.http.Header[] getHeaders() {
         return headers;
     }
 

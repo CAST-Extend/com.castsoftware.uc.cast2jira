@@ -1,3 +1,5 @@
+/* Update MMA 2025-05-20:  code optimization */
+
 package com.castsoftware.jenkins.CastToJira;
 
 import java.io.File;
@@ -44,7 +46,6 @@ import hudson.tasks.Builder;
 import hudson.tasks.Shell;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import hudson.util.Secret;
 import net.sf.json.JSONObject;
 
 /**
@@ -61,7 +62,7 @@ import net.sf.json.JSONObject;
 public class CastJiraConnectorBuilder extends Builder // implements
 // SimpleBuildStep
 {
-    private ArrayList<CastJiraLinkage> castJiraLinkage;
+    private final ArrayList<CastJiraLinkage> castJiraLinkage;
 
     private String castUserName;
     private String castUserPassword;
@@ -82,23 +83,22 @@ public class CastJiraConnectorBuilder extends Builder // implements
     private static String OS = System.getProperty("os.name").toLowerCase();
 
     public static boolean isWindows() {
-        return (OS.indexOf("win") >= 0);
+        return (OS.contains("win"));
     }
 
     public static boolean isMac() {
-        return (OS.indexOf("mac") >= 0);
+        return (OS.contains("mac"));
     }
 
     public static boolean isUnix() {
-        return (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0);
+        return (OS.contains("nix") || OS.contains("nux") || OS.indexOf("aix") > 0);
     }
 
     public static boolean isSolaris() {
-        return (OS.indexOf("sunos") >= 0);
+        return (OS.contains("sunos"));
     }
 
-    // Fields in config.jelly must match the parameter names in the
-    // "DataBoundConstructor"
+    // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     /**
      * Instantiates a new cast jira connector plugin.
      */
@@ -107,6 +107,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
             String databaseName, String castUserName, String castUserPassword,
             String jiraRestApiUrl, String jiraUser, String jiraUserPassword,
             ArrayList<CastJiraLinkage> castJiraLinkage, boolean debugEnabled, String workFlow) {
+
         this.setDatabaseHost(databaseHost);
         this.setDatabaseName(databaseName);
         this.setDatabasePort(databasePort);
@@ -149,7 +150,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
             command = command + resolutionCommand;
         }
 
-        if (jiraComponentName != null && jiraComponentName.length() > 0) {
+        if (jiraComponentName != null && !jiraComponentName.isEmpty()) {
             command = String.format("%s -component \"%s\"", command, jiraComponentName);
         }
 
@@ -176,7 +177,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
         command = command.replaceAll("#DATABASE_HOST#", databaseHost);
         command = command.replaceAll("#DATABASE_NAME#", databaseName);
         command = command.replaceAll("#DATABASE_PORT#", databasePort);
-        command = command.replaceAll("#DATABASE_PROVIDER#", "CSS");
+        command = command.replaceAll("#DATABASE_PROVIDER#", "css/postgres");
         command = command.replaceAll("#DATABASE_SCHEMA#", schemaName);
         command = command.replaceAll("#JIRA_ISSUE_TYPE#", jiraIssueType);
         command = command.replaceAll("#JIRA_PROJECT_NAME#", projName);
@@ -227,8 +228,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
             logger.println(getLogDateTime() + "- " + "debugEnabled: " + getDebugEnabled());
             logger.println("Workflow: " + getWorkFlow());
         }
-        logger.println(getLogDateTime() + "- "
-                + "Logger configuration. Details in Job Console & Jenkins - All System Logs");
+        logger.println(getLogDateTime() + "- " + "Logger configuration. Details in Job Console & Jenkins - All System Logs");
         logger.println(getLogDateTime() + "- " + "Getting Action Plan...");
 
         String jiraUtilLoc = getDescriptor().getJiraExportLoc();
@@ -247,7 +247,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
         if (getReturnValue() == 0) {
             return true;
         } else {
-            if (getWorkFlow().trim().toLowerCase().equals("no")) {
+            if (getWorkFlow().trim().equalsIgnoreCase("no")) {
                 return true;
             }
         }
@@ -289,7 +289,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
      * @return the useDatabase
      */
     public String getUseDatabase() {
-        return useDatabase == null ? "css" : useDatabase;
+        return useDatabase == null ? "css/postgres" : useDatabase;
     }
 
     /**
@@ -428,7 +428,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
     private String getLogDateTime() {
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HHmmss");
-        return format.format(cal.getTime()).toString();
+        return format.format(cal.getTime());
     }
 
     /**
@@ -455,7 +455,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
     }
 
     /**
-     * Descriptor for {@link CastJiraConnectorPlugin}. Used as a singleton. The
+     * Descriptor for {@link DescriptorImpl}. Used as a singleton. The
      * class is marked as public so that it can be accessed from views.
      * 
      * <p>
@@ -464,14 +464,11 @@ public class CastJiraConnectorBuilder extends Builder // implements
      * for the actual HTML fragment for the configuration screen.
      */
     @Extension
-    // This indicates to Jenkins that this is an implementation of an extension
-    // point.
+    // This indicates to Jenkins that this is an implementation of an extension point.
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
         private String jiraExportLoc;
         private JSONObject useResolution;
         private String resolution;
-
-        // private NullProgressMonitor pm = new NullProgressMonitor();
 
         /**
          * To persist global configuration information, simply store it in a
@@ -490,14 +487,14 @@ public class CastJiraConnectorBuilder extends Builder // implements
         }
 
         private JiraHelper jiraClient = null;
-        private JiraHelper forceJiraClient(String jiraRestApiUrl, String jiraUser,
-                String jiraUserPassword) throws URISyntaxException {
-            
+
+        private JiraHelper forceJiraClient(String jiraRestApiUrl, String jiraUser, String jiraUserPassword) throws URISyntaxException {
             if (!jiraRestApiUrl.isEmpty() && !jiraUser.isEmpty() && !jiraUserPassword.isEmpty()) {
                 jiraClient = new JiraHelper(jiraRestApiUrl, jiraUser, jiraUserPassword);
             } else {
-                throw new IllegalArgumentException("Jira Connection error, invalide username or password");
+                throw new IllegalArgumentException("Jira Connection error, invalid username or password");
             }
+
             return jiraClient;
         }
 
@@ -522,42 +519,42 @@ public class CastJiraConnectorBuilder extends Builder // implements
          */
         public FormValidation doCheckAppName(@QueryParameter String value)
                 throws IOException, ServletException {
-            if (value.length() == 0)
+            if (value.isEmpty())
                 return FormValidation.error("Please set the Application Name. It is mandatory");
             return FormValidation.ok();
         }
 
         public FormValidation doCheckCastUserName(@QueryParameter String value)
                 throws IOException, ServletException {
-            if (value.length() == 0)
+            if (value.isEmpty())
                 return FormValidation.error("Please set the Cast User Name. It is mandatory");
             return FormValidation.ok();
         }
 
         public FormValidation doCheckCastUserPassword(@QueryParameter String value)
                 throws IOException, ServletException {
-            if (value.length() == 0)
+            if (value.isEmpty())
                 return FormValidation.error("Please set the Cast User Password. It is mandatory");
             return FormValidation.ok();
         }
 
         public FormValidation doCheckDatabaseHost(@QueryParameter String value)
                 throws IOException, ServletException {
-            if (value.length() == 0)
+            if (value.isEmpty())
                 return FormValidation.error("Please set the Database Host. It is mandatory");
             return FormValidation.ok();
         }
 
         public FormValidation doCheckDatabaseName(@QueryParameter String value)
                 throws IOException, ServletException {
-            if (value.length() == 0)
+            if (value.isEmpty())
                 return FormValidation.error("Please set the Database Name. It is mandatory");
             return FormValidation.ok();
         }
 
         public FormValidation doCheckDatabasePort(@QueryParameter String value)
                 throws IOException, ServletException {
-            if (value.length() == 0)
+            if (value.isEmpty())
                 return FormValidation.error("Please set the Database Port. It is mandatory.");
             return FormValidation.ok();
         }
@@ -569,11 +566,10 @@ public class CastJiraConnectorBuilder extends Builder // implements
 
         public FormValidation doCheckSchemaProfile(@QueryParameter String value)
                 throws IOException, ServletException {
-            if (value.length() == 0)
+            if (value.isEmpty())
                 return FormValidation.error("Please set the Database Schema. It is mandatory.");
             if (!value.toLowerCase().endsWith("_central"))
-                return FormValidation.error(
-                        "Please set Database Schema has to be the central one xxx_central. It is mandatory.");
+                return FormValidation.error("Please set Database Schema has to be the central one xxx_central. It is mandatory.");
             return FormValidation.ok();
         }
 
@@ -584,6 +580,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
                 @QueryParameter("castUserName") @RelativePath("..") final String castUserName,
                 @QueryParameter("castUserPassword") @RelativePath("..") final String castUserPassword,
                 @QueryParameter("useDatabase") @RelativePath("..") final String useDatabase) {
+
             ListBoxModel m = new ListBoxModel();
             m.add("");
             DatabaseConnection conn = null;
@@ -648,6 +645,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
                 @QueryParameter("jiraRestApiUrl") final String jiraRestApiUrl,
                 @QueryParameter("jiraUser") final String jiraUser,
                 @QueryParameter("jiraUserPassword") final String jiraUserPassword) {
+
             Logger log = LogManager.getLogManager().getLogger("hudson.WebAppMain");
 
             log.info("Jira Login Validation");
@@ -666,7 +664,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
                     return FormValidation.error("Invalid username or password");
             } catch (URISyntaxException ex) {
                 log.info(ex.getMessage());
-                return FormValidation.error("Unable to acces Jira API");
+                return FormValidation.error("Unable to access Jira API");
             } catch (RestClientException ex) {
                 log.info(ex.getMessage());
                 Throwable cause = ex;
@@ -691,6 +689,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
                 if (jiraClient != null) {
                     projects = jiraClient.getProjectClient().getAllProjects().get();
                     for (BasicProject bp : projects) {
+                        assert bp.getName() != null;
                         m.add(bp.getName(), bp.getKey());
                     }
                 }
@@ -768,11 +767,11 @@ public class CastJiraConnectorBuilder extends Builder // implements
             if (databaseHost.isEmpty())
                 return FormValidation.error("Please fill-in the database host");
             if (databaseName.isEmpty())
+                return FormValidation.error("Please fill-in the database name");
             if (databasePort.isEmpty())
                 return FormValidation.error("Please fill-in the database port");
-            try {
-                System.out.println(castUserName);
 
+            try {
                 DatabaseConnection conn = new DatabaseConnection(castUserName, castUserPassword,
                         databaseHost, databaseName, databasePort, useDatabase);
 
@@ -797,10 +796,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
                 URL url = new URL(value);
                 URLConnection conn = url.openConnection();
                 conn.connect();
-            } catch (MalformedURLException e) {
-                msg = "URL syntax not valid. Please set a valid URL";
-                isError = true;
-            } catch (IllegalArgumentException e) {
+            } catch (MalformedURLException | IllegalArgumentException e) {
                 msg = "URL syntax not valid. Please set a valid URL";
                 isError = true;
             } catch (IOException e) {
@@ -809,6 +805,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             if (isError)
                 return FormValidation.error(msg);
             else if (isWarning)
@@ -851,13 +848,12 @@ public class CastJiraConnectorBuilder extends Builder // implements
 
         @SuppressWarnings("rawtypes")
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
-            // Indicates that this builder can be used with all kinds of project
-            // types
+            // Indicates that this builder can be used with all kinds of project types
             return true;
         }
 
         /**
-         * This human readable name is used in the configuration screen.
+         * This human-readable name is used in the configuration screen.
          */
         public String getDisplayName() {
             return "Cast To Jira Integration Plugin";
@@ -884,7 +880,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
         }
 
         public boolean isUseResolution() {
-            return useResolution == null ? false : true;
+            return useResolution != null;
         }
 
         public void setUseResolution(JSONObject useResolution) {

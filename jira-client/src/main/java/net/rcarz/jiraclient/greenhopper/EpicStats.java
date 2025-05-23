@@ -17,13 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient.greenhopper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.rcarz.jiraclient.Field;
-
-import java.util.Map;
-
-import net.sf.json.JSONObject;
 
 /**
  * GreenHopper epic statistics.
@@ -42,15 +41,13 @@ public class EpicStats {
      *
      * @param json JSON payload
      */
-    protected EpicStats(JSONObject json) {
-        Map map = json;
-
-        notDoneEstimate = Field.getDouble(map.get("notDoneEstimate"));
-        doneEstimate = Field.getDouble(map.get("doneEstimate"));
-        estimated = Field.getInteger(map.get("estimated"));
-        notEstimated = Field.getInteger(map.get("notEstimated"));
-        notDone = Field.getInteger(map.get("notDone"));
-        done = Field.getInteger(map.get("done"));
+    protected EpicStats(JsonNode json) {
+        notDoneEstimate = Field.getDouble(json.get("notDoneEstimate"));
+        doneEstimate = Field.getDouble(json.get("doneEstimate"));
+        estimated = Field.getInteger(json.get("estimated"));
+        notEstimated = Field.getInteger(json.get("notEstimated"));
+        notDone = Field.getInteger(json.get("notDone"));
+        done = Field.getInteger(json.get("done"));
     }
 
     public Double getNotDoneEstimate() {

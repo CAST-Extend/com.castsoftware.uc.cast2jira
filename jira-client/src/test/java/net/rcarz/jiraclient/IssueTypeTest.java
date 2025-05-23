@@ -1,15 +1,17 @@
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
 import org.powermock.api.mockito.PowerMockito;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertSame;
 import static org.mockito.Matchers.anyString;
 import static org.powermock.api.mockito.PowerMockito.when;
-
 
 public class IssueTypeTest {
 
@@ -23,24 +25,29 @@ public class IssueTypeTest {
         IssueType issueType = new IssueType(null, getTestJSON());
 
         assertFalse(issueType.isSubtask());
-        assertEquals(issueType.getName(), "Story");
-        assertEquals(issueType.getId(), "7");
-        assertEquals(issueType.getIconUrl(), "https://brainbubble.atlassian.net/images/icons/issuetypes/story.png");
-        assertEquals(issueType.getDescription(), "This is a test issue type.");
+        assertEquals("Story", issueType.getName());
+        assertEquals("7", issueType.getId());
+        assertEquals("https://brainbubble.atlassian.net/images/icons/issuetypes/story.png", issueType.getIconUrl());
+        assertEquals("This is a test issue type.", issueType.getDescription());
     }
 
     @Test
     public void testFields() throws Exception {
-        final JSONObject testJSON = getTestJSON();
-        final JSONObject fields = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+
+        ObjectNode testJSON = (ObjectNode) getTestJSON();
+        ObjectNode fields = mapper.createObjectNode();
+
         fields.put("key1","key1Value");
         fields.put("key2","key2Value");
-        testJSON.put("fields", fields);
-        IssueType issueType = new IssueType(null, testJSON);
-        assertEquals(2,issueType.getFields().size());
-        assertSame("key1Value",issueType.getFields().getString("key1"));
-        assertSame("key2Value",issueType.getFields().getString("key2"));
+        testJSON.set("fields", fields);
 
+        IssueType issueType = new IssueType(null, testJSON);
+        JsonNode fieldsNode = issueType.getFields();
+
+        assertEquals(2, fieldsNode.size());
+        assertEquals("key1Value", fieldsNode.get("key1").asText());
+        assertEquals("key2Value", fieldsNode.get("key2").asText());
     }
 
     @Test
@@ -49,12 +56,11 @@ public class IssueTypeTest {
         when(restClient.get(anyString())).thenReturn(getTestJSON());
         IssueType issueType = IssueType.get(restClient,"someID");
         assertFalse(issueType.isSubtask());
-        assertEquals(issueType.getName(), "Story");
-        assertEquals(issueType.getId(), "7");
-        assertEquals(issueType.getIconUrl(), "https://brainbubble.atlassian.net/images/icons/issuetypes/story.png");
-        assertEquals(issueType.getDescription(), "This is a test issue type.");
+        assertEquals("Story", issueType.getName());
+        assertEquals("7", issueType.getId());
+        assertEquals("https://brainbubble.atlassian.net/images/icons/issuetypes/story.png", issueType.getIconUrl());
+        assertEquals("This is a test issue type.", issueType.getDescription());
     }
-
 
     @Test(expected = JiraException.class)
     public void testJiraExceptionFromRestException() throws Exception {
@@ -73,19 +79,21 @@ public class IssueTypeTest {
     public void testIssueTypeToString(){
         IssueType issueType = new IssueType(null, getTestJSON());
 
-        assertEquals(issueType.toString(),"Story");
+        assertEquals("Story", issueType.toString());
     }
 
-    private JSONObject getTestJSON() {
-        JSONObject jsonObject = new JSONObject();
+    private JsonNode getTestJSON() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode node = mapper.createObjectNode();
 
-        jsonObject.put("self", "https://brainbubble.atlassian.net/rest/api/2/issuetype/7");
-        jsonObject.put("id", "7");
-        jsonObject.put("description", "This is a test issue type.");
-        jsonObject.put("iconUrl", "https://brainbubble.atlassian.net/images/icons/issuetypes/story.png");
-        jsonObject.put("name", "Story");
-        jsonObject.put("subtask", false);
+        node.put("self", "https://brainbubble.atlassian.net/rest/api/2/issuetype/7");
+        node.put("id", "7");
+        node.put("description", "This is a test issue type.");
+        node.put("iconUrl", "https://brainbubble.atlassian.net/images/icons/issuetypes/story.png");
+        node.put("name", "Story");
+        node.put("subtask", false);
 
-        return jsonObject;
+        return node;
     }
+
 }

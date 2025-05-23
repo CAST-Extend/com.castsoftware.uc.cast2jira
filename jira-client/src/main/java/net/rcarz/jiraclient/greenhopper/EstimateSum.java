@@ -17,13 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient.greenhopper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.rcarz.jiraclient.Field;
-
-import java.util.Map;
-
-import net.sf.json.JSONObject;
 
 /**
  * GreenHopper estimate sum for rapid views.
@@ -38,11 +37,9 @@ public class EstimateSum {
      *
      * @param json JSON payload
      */
-    protected EstimateSum(JSONObject json) {
-        Map map = json;
-
-        value = Field.getDouble(map.get("value"));
-        text = Field.getString(map.get("text"));
+    protected EstimateSum(JsonNode json) {
+        value = Field.getDouble(json.get("value"));
+        text = Field.getString(json.get("text"));
     }
 
     public Double getValue() {

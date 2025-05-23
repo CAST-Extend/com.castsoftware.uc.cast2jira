@@ -17,11 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import java.util.Map;
-
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Represents issue time tracking data.
@@ -40,15 +42,13 @@ public class TimeTracking {
      *
      * @param json JSON payload
      */
-    protected TimeTracking(JSONObject json) {
-        Map<?, ?> map = json;
-
-        originalEstimate = Field.getString(map.get("originalEstimate"));
-        remainingEstimate = Field.getString(map.get("remainingEstimate"));
-        timeSpent = Field.getString(map.get("timeSpent"));
-        originalEstimateSeconds = Field.getInteger(map.get("originalEstimateSeconds"));
-        remainingEstimateSeconds = Field.getInteger(map.get("remainingEstimateSeconds"));
-        timeSpentSeconds = Field.getInteger(map.get("timeSpentSeconds"));
+    protected TimeTracking(JsonNode json) {
+        originalEstimate = Field.getString(json.get("originalEstimate"));
+        remainingEstimate = Field.getString(json.get("remainingEstimate"));
+        timeSpent = Field.getString(json.get("timeSpent"));
+        originalEstimateSeconds = Field.getInteger(json.get("originalEstimateSeconds"));
+        remainingEstimateSeconds = Field.getInteger(json.get("remainingEstimateSeconds"));
+        timeSpentSeconds = Field.getInteger(json.get("timeSpentSeconds"));
     }
 
     public TimeTracking() {
@@ -63,8 +63,9 @@ public class TimeTracking {
         this.timeSpentSeconds =tt.timeSpentSeconds;
     }
 
-    protected JSONObject toJsonObject() {
-        JSONObject object = new JSONObject();
+    protected JsonNode toJsonNode() {
+        ObjectNode object = JsonNodeFactory.instance.objectNode();
+
         if (originalEstimate != null)
             object.put("originalEstimate", originalEstimate);
 

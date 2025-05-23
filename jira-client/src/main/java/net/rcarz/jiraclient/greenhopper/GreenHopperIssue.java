@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient.greenhopper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.rcarz.jiraclient.Field;
 import net.rcarz.jiraclient.Issue;
 import net.rcarz.jiraclient.JiraException;
 import net.rcarz.jiraclient.RestClient;
 
 import java.util.List;
-import java.util.Map;
-
-import net.sf.json.JSONObject;
 
 /**
  * A base class for GreenHopper issues.
@@ -59,35 +59,33 @@ public abstract class GreenHopperIssue extends GreenHopperResource {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected GreenHopperIssue(RestClient restclient, JSONObject json) {
+    protected GreenHopperIssue(RestClient restclient, JsonNode json) {
         super(restclient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        id = Field.getInteger(map.get("id"));
-        key = Field.getString(map.get("key"));
-        hidden = Field.getBoolean(map.get("hidden"));
-        summary = Field.getString(map.get("summary"));
-        typeName = Field.getString(map.get("key"));
-        typeId = Field.getString(map.get("typeId"));
-        typeUrl = Field.getString(map.get("typeUrl"));
-        priorityUrl = Field.getString(map.get("priorityUrl"));
-        priorityName = Field.getString(map.get("priorityName"));
-        done = Field.getBoolean(map.get("done"));
-        assignee = Field.getString(map.get("assignee"));
-        assigneeName = Field.getString(map.get("assigneeName"));
-        avatarUrl = Field.getString(map.get("avatarUrl"));
-        colour = Field.getString(map.get("color"));
-        statusId = Field.getString(map.get("statusId"));
-        statusName = Field.getString(map.get("statusName"));
-        statusUrl = Field.getString(map.get("statusUrl"));
-        fixVersions = GreenHopperField.getIntegerArray(map.get("fixVersions"));
-        projectId = Field.getInteger(map.get("projectId"));
+    private void deserialize(JsonNode json) {
+        id = Field.getInteger(json.get("id"));
+        key = Field.getString(json.get("key"));
+        hidden = Field.getBoolean(json.get("hidden"));
+        summary = Field.getString(json.get("summary"));
+        typeName = Field.getString(json.get("key"));
+        typeId = Field.getString(json.get("typeId"));
+        typeUrl = Field.getString(json.get("typeUrl"));
+        priorityUrl = Field.getString(json.get("priorityUrl"));
+        priorityName = Field.getString(json.get("priorityName"));
+        done = Field.getBoolean(json.get("done"));
+        assignee = Field.getString(json.get("assignee"));
+        assigneeName = Field.getString(json.get("assigneeName"));
+        avatarUrl = Field.getString(json.get("avatarUrl"));
+        colour = Field.getString(json.get("color"));
+        statusId = Field.getString(json.get("statusId"));
+        statusName = Field.getString(json.get("statusName"));
+        statusUrl = Field.getString(json.get("statusUrl"));
+        fixVersions = GreenHopperField.getIntegerArray(json.get("fixVersions"));
+        projectId = Field.getInteger(json.get("projectId"));
     }
 
     /**

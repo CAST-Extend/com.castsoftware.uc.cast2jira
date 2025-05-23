@@ -17,15 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Map;
 
 /**
  * Represents a product version.
@@ -45,15 +48,15 @@ public class Version extends Resource {
          * The JSON request that will be built incrementally as fluent methods
          * are invoked.
          */
-        JSONObject req = new JSONObject();
+        ObjectNode req = JsonNodeFactory.instance.objectNode();
 
         /**
          * Creates a new fluent.
-         * @param restclient the REST client
+         * @param restClient the REST client
          * @param project the project key
          */
-        private FluentCreate(RestClient restclient, String project) {
-            this.restclient = restclient;
+        private FluentCreate(RestClient restClient, String project) {
+            this.restclient = restClient;
             req.put("project", project);
         }
 
@@ -108,9 +111,6 @@ public class Version extends Resource {
             return this;
         }
 
-
-
-
         /**
          * Executes the create action.
          * @return the created Version
@@ -118,7 +118,7 @@ public class Version extends Resource {
          * @throws JiraException when the create fails
          */
         public Version execute() throws JiraException {
-            JSON result = null;
+            JsonNode result;
 
             try {
                 result = restclient.post(getRestUri(null), req);
@@ -126,12 +126,11 @@ public class Version extends Resource {
                 throw new JiraException("Failed to create version", ex);
             }
 
-            if (!(result instanceof JSONObject) || !((JSONObject) result).containsKey("id")
-                    || !(((JSONObject) result).get("id") instanceof String)) {
+            if (!result.isObject() || !result.has("id") || !result.get("id").isTextual()) {
                 throw new JiraException("Unexpected result on create version");
             }
 
-            return new Version(restclient, (JSONObject) result);
+            return new Version(restclient, result);
         }
     }
 
@@ -144,14 +143,14 @@ public class Version extends Resource {
     /**
      * Creates a version from a JSON payload.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param json       JSON payload
      */
-    protected Version(RestClient restclient, JSONObject json) {
-        super(restclient);
+    protected Version(RestClient restClient, JsonNode json) {
+        super(restClient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
     
     /**
@@ -161,8 +160,10 @@ public class Version extends Resource {
      *            The version to merge
      */
     public void mergeWith(Version version) throws JiraException {
-    
-        JSONObject req = new JSONObject();
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode req = mapper.createObjectNode();
+
         req.put("description", version.getDescription());
         req.put("name", version.getName());
         req.put("archived", version.isArchived());
@@ -183,8 +184,10 @@ public class Version extends Resource {
     *            The project the version will be copied to
     */
     public void copyTo(Project project) throws JiraException {
-    
-        JSONObject req = new JSONObject();
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode req = mapper.createObjectNode();
+
         req.put("description", getDescription());
         req.put("name", getName());
         req.put("archived", isArchived());
@@ -203,38 +206,35 @@ public class Version extends Resource {
     /**
      * Retrieves the given version record.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param id         Internal JIRA ID of the version
      * @return a version instance
      * @throws JiraException when the retrieval fails
      */
-    public static Version get(RestClient restclient, String id)
-            throws JiraException {
+    public static Version get(RestClient restClient, String id) throws JiraException {
 
-        JSON result = null;
+        JsonNode result;
 
         try {
-            result = restclient.get(getBaseUri() + "version/" + id);
+            result = restClient.get(getBaseUri() + "version/" + id);
         } catch (Exception ex) {
             throw new JiraException("Failed to retrieve version " + id, ex);
         }
 
-        if (!(result instanceof JSONObject))
+        if (result == null || !result.isObject())
             throw new JiraException("JSON payload is malformed");
 
-        return new Version(restclient, (JSONObject) result);
+        return new Version(restClient, result);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        self = Field.getString(map.get("self"));
-        id = Field.getString(map.get("id"));
-        name = Field.getString(map.get("name"));
-        archived = Field.getBoolean(map.get("archived"));
-        released = Field.getBoolean(map.get("released"));
-        releaseDate = Field.getString(map.get("releaseDate"));
-        description = Field.getString(map.get("description"));
+    private void deserialize(JsonNode json) {
+        self = Field.getString(json.get("self"));
+        id = Field.getString(json.get("id"));
+        name = Field.getString(json.get("name"));
+        archived = Field.getBoolean(json.get("archived"));
+        released = Field.getBoolean(json.get("released"));
+        releaseDate = Field.getString(json.get("releaseDate"));
+        description = Field.getString(json.get("description"));
     }
 
     @Override
@@ -270,14 +270,13 @@ public class Version extends Resource {
     /**
      * Creates a new JIRA Version.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param project Key of the project to create the version in
      *
      * @return a fluent create instance
      */
-    public static FluentCreate create(RestClient restclient, String project) {
-        FluentCreate fc = new FluentCreate(restclient, project);
-        return fc;
+    public static FluentCreate create(RestClient restClient, String project) {
+        return new FluentCreate(restClient, project);
     }
 }
 

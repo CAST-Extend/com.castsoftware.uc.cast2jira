@@ -17,13 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient.greenhopper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.rcarz.jiraclient.Field;
-
-import java.util.Map;
-
-import net.sf.json.JSONObject;
 
 /**
  * GreenHopper estimate statistics for rapid views.
@@ -39,18 +38,13 @@ public class EstimateStatistic {
      *
      * @param json JSON payload
      */
-    protected EstimateStatistic(JSONObject json) {
-        Map map = json;
+    protected EstimateStatistic(JsonNode json) {
+        statFieldId = Field.getString(json.get("statFieldId"));
 
-        statFieldId = Field.getString(map.get("statFieldId"));
-
-        if (map.containsKey("statFieldValue") &&
-            map.get("statFieldValue") instanceof JSONObject) {
-
-            Map val = (Map)json.get("statFieldValue");
-
-            statFieldValue = Field.getDouble(val.get("value"));
-            statFieldText = Field.getString(val.get("text"));
+        JsonNode statFieldValueNode = json.get("statFieldValue");
+        if (statFieldValueNode != null && statFieldValueNode.isObject()) {
+            statFieldValue = Field.getDouble(statFieldValueNode.get("value"));
+            statFieldText = Field.getString(statFieldValueNode.get("text"));
         }
     }
 

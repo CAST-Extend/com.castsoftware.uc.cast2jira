@@ -1,15 +1,14 @@
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-
-public class IssueHistory extends Resource {
+public class IssueHistory extends Resource implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private User user;
@@ -19,14 +18,14 @@ public class IssueHistory extends Resource {
     /**
      * Creates an issue history record from a JSON payload.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param json JSON payload
      */
-    protected IssueHistory(RestClient restclient, JSONObject json) {
-        super(restclient);
+    protected IssueHistory(RestClient restClient, JsonNode json) {
+        super(restClient);
 
         if (json != null) {
-            deserialise(restclient,json);
+            deserialize(restClient,json);
         }
     }
 
@@ -39,17 +38,18 @@ public class IssueHistory extends Resource {
         this.changes = changes;
     }
 
-    private void deserialise(RestClient restclient, JSONObject json) {
-        Map map = json;
-        self = Field.getString(map.get("self"));
-        id = Field.getString(map.get("id"));
-        user = new User(restclient,(JSONObject)map.get("author"));
-        created = Field.getDateTime(map.get("created"));
-        JSONArray items = JSONArray.fromObject(map.get("items"));
-        changes = new ArrayList<IssueHistoryItem>(items.size());
-        for (int i = 0; i < items.size(); i++) {
-            JSONObject p = items.getJSONObject(i);
-            changes.add(new IssueHistoryItem(restclient, p));
+    private void deserialize(RestClient restclient, JsonNode json) {
+        self = Field.getString(json.get("self"));
+        id = Field.getString(json.get("id"));
+        user = new User(restclient,json.get("author"));
+        created = Field.getDateTime(json.get("created"));
+
+        JsonNode itemsNode = json.get("items");
+        changes = new ArrayList<>();
+        if (itemsNode != null && itemsNode.isArray()) {
+            for (JsonNode itemNode : itemsNode) {
+                changes.add(new IssueHistoryItem(restclient, itemNode));
+            }
         }
     }
 

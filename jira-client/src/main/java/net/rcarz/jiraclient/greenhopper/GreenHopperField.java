@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient.greenhopper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.rcarz.jiraclient.RestClient;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -58,64 +58,61 @@ public final class GreenHopperField {
     /**
      * Gets an epic stats object from the given object.
      *
-     * @param es a JSONObject instance
+     * @param es a JsonNode instance
      *
-     * @return a EpicStats instance or null if es isn't a JSONObject instance
+     * @return a EpicStats instance or null if es isn't a JsonNode instance
      */
-    public static EpicStats getEpicStats(Object es) {
-        EpicStats result = null;
-
-        if (es instanceof JSONObject && !((JSONObject)es).isNullObject())
-            result = new EpicStats((JSONObject)es);
-
-        return result;
+    public static EpicStats getEpicStats(JsonNode es) {
+        if (es != null && es.isObject() && !es.isEmpty()) {
+            return new EpicStats(es);
+        }
+        return null;
     }
 
     /**
      * Gets an estimate statistic object from the given object.
      *
-     * @param es a JSONObject instance
+     * @param es a JsonNode instance
      *
-     * @return a EstimateStatistic instance or null if es isn't a JSONObject instance
+     * @return a EstimateStatistic instance or null if es isn't a JsonNode instance
      */
-    public static EstimateStatistic getEstimateStatistic(Object es) {
-        EstimateStatistic result = null;
-
-        if (es instanceof JSONObject && !((JSONObject)es).isNullObject())
-            result = new EstimateStatistic((JSONObject)es);
-
-        return result;
+    public static EstimateStatistic getEstimateStatistic(JsonNode es) {
+        if (es != null && es.isObject() && !es.isEmpty()) {
+            return new EstimateStatistic(es);
+        }
+        return null;
     }
 
     /**
      * Gets an estimate sum object from the given object.
      *
-     * @param es a JSONObject instance
+     * @param es a JsonNode instance
      *
-     * @return a EstimateSum instance or null if es isn't a JSONObject instance
+     * @return a EstimateSum instance or null if es isn't a JsonNode instance
      */
-    public static EstimateSum getEstimateSum(Object es) {
-        EstimateSum result = null;
-
-        if (es instanceof JSONObject && !((JSONObject)es).isNullObject())
-            result = new EstimateSum((JSONObject)es);
-
-        return result;
+    public static EstimateSum getEstimateSum(JsonNode es) {
+        if (es != null && es.isObject() && !es.isEmpty()) {
+            return new EstimateSum(es);
+        }
+        return null;
     }
 
     /**
      * Gets a list of integers from the given object.
      *
-     * @param ia a JSONArray instance
+     * @param ia a JsonNode instance
      *
      * @return a list of integers
      */
-    public static List<Integer> getIntegerArray(Object ia) {
-        List<Integer> results = new ArrayList<Integer>();
+    public static List<Integer> getIntegerArray(JsonNode ia) {
+        List<Integer> results = new ArrayList<>();
 
-        if (ia instanceof JSONArray) {
-            for (Object v : (JSONArray)ia)
-                results.add((Integer)v);
+        if (ia != null && ia.isArray()) {
+            for (JsonNode node : ia) {
+                if (node.isInt()) {
+                    results.add(node.intValue());
+                }
+            }
         }
 
         return results;
@@ -125,51 +122,52 @@ public final class GreenHopperField {
      * Gets a GreenHopper resource from the given object.
      *
      * @param type Resource data type
-     * @param r a JSONObject instance
-     * @param restclient REST client instance
+     * @param r a JsonNode instance
+     * @param restClient REST client instance
      *
      * @return a Resource instance or null if r isn't a JSONObject instance
      */
     public static <T extends GreenHopperResource> T getResource(
-        Class<T> type, Object r, RestClient restclient) {
+        Class<T> type, JsonNode r, RestClient restClient) {
 
-        T result = null;
-
-        if (r instanceof JSONObject && !((JSONObject)r).isNullObject()) {
-            if (type == Epic.class)
-                result = (T)new Epic(restclient, (JSONObject)r);
-            else if (type == Marker.class)
-                result = (T)new Marker(restclient, (JSONObject)r);
-            else if (type == RapidView.class)
-                result = (T)new RapidView(restclient, (JSONObject)r);
-            else if (type == RapidViewProject.class)
-                result = (T)new RapidViewProject(restclient, (JSONObject)r);
-            else if (type == Sprint.class)
-                result = (T)new Sprint(restclient, (JSONObject)r);
-            else if (type == SprintIssue.class)
-                result = (T)new SprintIssue(restclient, (JSONObject)r);
+        if (r == null || !r.isObject()) {
+            return null;
         }
+        JsonNode node = (JsonNode) r;
 
-        return result;
+        if (type == Epic.class)
+            return type.cast(new Epic(restClient, node));
+        else if (type == Marker.class)
+            return type.cast(new Marker(restClient, node));
+        else if (type == RapidView.class)
+            return type.cast(new RapidView(restClient, node));
+        else if (type == RapidViewProject.class)
+            return type.cast(new RapidViewProject(restClient, node));
+        else if (type == Sprint.class)
+            return type.cast(new Sprint(restClient, node));
+        else if (type == SprintIssue.class)
+            return type.cast(new SprintIssue(restClient, node));
+
+        return null;
     }
 
     /**
      * Gets a list of GreenHopper resources from the given object.
      *
      * @param type Resource data type
-     * @param ra a JSONArray instance
-     * @param restclient REST client instance
+     * @param ra a JsonNode instance
+     * @param restClient REST client instance
      *
      * @return a list of Resources found in ra
      */
     public static <T extends GreenHopperResource> List<T> getResourceArray(
-        Class<T> type, Object ra, RestClient restclient) {
+        Class<T> type, JsonNode ra, RestClient restClient) {
 
-        List<T> results = new ArrayList<T>();
+        List<T> results = new ArrayList<>();
 
-        if (ra instanceof JSONArray) {
-            for (Object v : (JSONArray)ra) {
-                T item = getResource(type, v, restclient);
+        if (ra != null && ra.isArray()) {
+            for (JsonNode node : ra) {
+                T item = getResource(type, node, restClient);
                 if (item != null)
                     results.add(item);
             }
@@ -181,16 +179,19 @@ public final class GreenHopperField {
     /**
      * Gets a list of strings from the given object.
      *
-     * @param ia a JSONArray instance
+     * @param node a JsonNode instance
      *
      * @return a list of strings
      */
-    public static List<String> getStringArray(Object ia) {
-        List<String> results = new ArrayList<String>();
+    public static List<String> getStringArray(JsonNode node) {
+        List<String> results = new ArrayList<>();
 
-        if (ia instanceof JSONArray) {
-            for (Object v : (JSONArray)ia)
-                results.add((String)v);
+        if (node != null && node.isArray()) {
+            for (JsonNode element : node) {
+                if (element.isTextual()) {
+                    results.add(element.asText());
+                }
+            }
         }
 
         return results;

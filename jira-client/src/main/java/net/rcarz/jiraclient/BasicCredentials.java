@@ -17,20 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of httpclient5 */
+
 package net.rcarz.jiraclient;
 
-import org.apache.http.HttpRequest;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.impl.auth.BasicScheme;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.message.BasicHeader;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
  * Basic HTTP authentication credentials.
  */
 public class BasicCredentials implements ICredentials {
 
-    private String username;
-    private String password;
+    private final String username;
+    private final String password;
 
     /**
      * Creates new basic HTTP credentials.
@@ -48,9 +52,12 @@ public class BasicCredentials implements ICredentials {
      *
      * @param req HTTP request to authenticate
      */
-    public void authenticate(HttpRequest req) {
-        Credentials creds = new UsernamePasswordCredentials(username, password);
-        req.addHeader(BasicScheme.authenticate(creds, "utf-8", false));
+    public void authenticate(ClassicHttpRequest req) {
+        String creds = username + ":" + password;
+        String encodedCredentials = Base64.getEncoder()
+                .encodeToString(creds.getBytes(StandardCharsets.UTF_8));
+        Header authHeader = new BasicHeader("Authorization", "Basic " + encodedCredentials);
+        req.addHeader(authHeader);
     }
 
     /**

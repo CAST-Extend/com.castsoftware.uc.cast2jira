@@ -17,9 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of httpclient5 */
+
 package net.rcarz.jiraclient;
 
-import org.apache.http.HttpRequest;
+import org.apache.hc.core5.http.ClassicHttpRequest;
 
 public interface ICredentials {
 
@@ -29,7 +31,7 @@ public interface ICredentials {
      *
      * @param req HTTP request to authenticate
      */
-    void authenticate(HttpRequest req);
+    void authenticate(ClassicHttpRequest req);
 
     /**
      * Gets the logon name representing these credentials.

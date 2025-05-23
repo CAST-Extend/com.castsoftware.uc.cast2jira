@@ -26,5 +26,5 @@ jira-client/target/classes
 jira-client/target/test-classes
 jira-client/target/surefire-reports
 
-client/test
-cast2jira
+cast2jira.zip
+.idea

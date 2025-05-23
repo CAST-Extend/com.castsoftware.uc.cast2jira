@@ -17,12 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import java.util.Map;
-
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Represents an issue link.
@@ -39,21 +38,19 @@ public class IssueLink extends Resource {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected IssueLink(RestClient restclient, JSONObject json) {
+    protected IssueLink(RestClient restclient, JsonNode json) {
         super(restclient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        self = Field.getString(map.get("self"));
-        id = Field.getString(map.get("id"));
-        type = Field.getResource(LinkType.class, map.get("type"), restclient);
-        outwardIssue = Field.getResource(Issue.class, map.get("outwardIssue"), restclient);
-        inwardIssue = Field.getResource(Issue.class, map.get("inwardIssue"), restclient);
+    private void deserialize(JsonNode json) {
+        self = Field.getString(json.get("self"));
+        id = Field.getString(json.get("id"));
+        type = Field.getResource(LinkType.class, json.get("type"), restclient);
+        outwardIssue = Field.getResource(Issue.class, json.get("outwardIssue"), restclient);
+        inwardIssue = Field.getResource(Issue.class, json.get("inwardIssue"), restclient);
     }
 
     /**
@@ -76,14 +73,14 @@ public class IssueLink extends Resource {
      * @param restclient REST client instance
      * @param id Internal JIRA ID of the issue link
      *
-     * @return a issue link instance
+     * @return an issue link instance
      *
      * @throws JiraException when the retrieval fails
      */
     public static IssueLink get(RestClient restclient, String id)
         throws JiraException {
 
-        JSON result = null;
+        JsonNode result;
 
         try {
             result = restclient.get(getBaseUri() + "issueLink/" + id);
@@ -91,10 +88,10 @@ public class IssueLink extends Resource {
             throw new JiraException("Failed to retrieve issue link " + id, ex);
         }
 
-        if (!(result instanceof JSONObject))
+        if (result == null || !result.isObject())
             throw new JiraException("JSON payload is malformed");
 
-        return new IssueLink(restclient, (JSONObject)result);
+        return new IssueLink(restclient, result);
     }
 
     @Override

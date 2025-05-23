@@ -2,14 +2,7 @@ package com.castsoftware.jira;
 
 import java.util.HashMap;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionGroup;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -30,27 +23,26 @@ public class SendToJira {
 
 	/** The log. */
 	public static Log log = LogFactory.getLog(SendToJira.class);
-	
-	/** The return value. */
-	private static int returnValue = 0;
 
-	/**
+    /**
 	 * The main method.
 	 * 
 	 * @param args
 	 *            the arguments
 	 */
 	public static void main(String[] args) {
-//		int index;
-		
-		System.out.println("CAST2Jira v" + SendToJira.class.getPackage().getImplementationVersion() + " (c) 2017, CAST Software, All Rights Reserved" );
+
+		log.info("CAST2Jira v" + SendToJira.class.getPackage().getImplementationVersion() + " (c) 2025, CAST Software, All Rights Reserved" );
 
 		final Options options = createOptions();
 		OptionsValidation validation = new OptionsValidation(args);
 
 		GetCastActionPlan gap = null;
+
+        int returnValue = 0;
+
 		try {
-			CommandLineParser parser = new GnuParser();
+			CommandLineParser parser = new DefaultParser();
 			CommandLine line = parser.parse(options, args);
 
 			if (validation.getOptionsValidation(options)) {
@@ -81,9 +73,11 @@ public class SendToJira {
 							line.getOptionValue(Constants.CAST_DB_PROVIDER));
 				}
 
-				HashMap<Integer, ActionPlanViolation> map = gap.getActionPlan();
+                assert gap != null;
+                HashMap<Integer, ActionPlanViolation> map = gap.getActionPlan();
+
 				log.info("Action Plan - Number of Violations: " + map.size());
-				if (map.size() != 0) {
+				if (!map.isEmpty()) {
 
 					String issueType;
 					if (line.hasOption(Constants.JIRA_ISSUE_TYPE)
@@ -112,6 +106,7 @@ public class SendToJira {
 							}
 						}
 					}
+
 					CreateJiraIssues createJiraIssues = new CreateJiraIssues(
 							line.getOptionValue(Constants.JIRA_USER_NAME),
 							line.getOptionValue(Constants.JIRA_USER_PASSWORD),
@@ -123,6 +118,7 @@ public class SendToJira {
 							line.getOptionValue(Constants.COMPONENT),
 							map
 					);
+
                     log.info("Final Report : ");
                     log.info("Number of Total Issues Processed : " + createJiraIssues.getTotalNumOfIssues());
                     log.info("Number of Total Issues Added : " + createJiraIssues.getTotalNumOfIssuesAdded());
@@ -139,17 +135,16 @@ public class SendToJira {
 		} catch (ParseException exp) {
 			// Something went wrong
 			log.error("ParseException Error: " + exp.getMessage());
-			new HelpFormatter().printHelp(SendToJira.class.getCanonicalName(),
-					options);
+			new HelpFormatter().printHelp(SendToJira.class.getCanonicalName(), options);
 			System.exit(returnValue);
         } catch (JiraException e) {
             log.error(String.format("Fatal Error: %s",e.getMessage()));
             System.exit(returnValue);
 		} catch (Exception e) {
-			e.printStackTrace();
 			log.error("Fatal error, please review the log for more information");
 			System.exit(returnValue);
 		}
+
 		System.exit(returnValue);
 	}
 

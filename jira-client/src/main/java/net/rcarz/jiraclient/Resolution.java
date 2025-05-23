@@ -17,12 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import java.util.Map;
-
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Represents an issue resolution.
@@ -38,20 +37,18 @@ public class Resolution extends Resource {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected Resolution(RestClient restclient, JSONObject json) {
+    protected Resolution(RestClient restclient, JsonNode json) {
         super(restclient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        self = Field.getString(map.get("self"));
-        id = Field.getString(map.get("id"));
-        description = Field.getString(map.get("description"));
-        name = Field.getString(map.get("name"));
+    private void deserialize(JsonNode json) {
+        self = Field.getString(json.get("self"));
+        id = Field.getString(json.get("id"));
+        description = Field.getString(json.get("description"));
+        name = Field.getString(json.get("name"));
     }
 
     /**
@@ -64,10 +61,9 @@ public class Resolution extends Resource {
      *
      * @throws JiraException when the retrieval fails
      */
-    public static Resolution get(RestClient restclient, String id)
-        throws JiraException {
+    public static Resolution get(RestClient restclient, String id) throws JiraException {
 
-        JSON result = null;
+        JsonNode result;
 
         try {
             result = restclient.get(getBaseUri() + "resolution/" + id);
@@ -75,10 +71,10 @@ public class Resolution extends Resource {
             throw new JiraException("Failed to retrieve resolution " + id, ex);
         }
 
-        if (!(result instanceof JSONObject))
+        if (result == null || !result.isObject())
             throw new JiraException("JSON payload is malformed");
 
-        return new Resolution(restclient, (JSONObject)result);
+        return new Resolution(restclient, result);
     }
 
     @Override

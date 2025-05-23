@@ -1,3 +1,5 @@
+/* Update MMA 2025-05-20:  code optimization */
+
 package com.castsoftware.jenkins.CastToJira;
 
 import hudson.Extension;
@@ -38,7 +40,7 @@ public class CastJiraLinkage extends AbstractDescribableImpl<CastJiraLinkage>
 	@Extension
 	public static class DescriptorImpl extends Descriptor<CastJiraLinkage>
 	{
-		private String name;
+		private final String name;
 
 		public DescriptorImpl()
 		{

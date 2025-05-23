@@ -2,7 +2,6 @@ package com.castsoftware.jira;
 
 import java.net.URISyntaxException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -22,7 +21,6 @@ import com.atlassian.jira.rest.client.api.domain.IssueType;
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.atlassian.jira.rest.client.api.domain.Resolution;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
-import com.atlassian.jira.rest.client.api.domain.Status;
 import com.atlassian.jira.rest.client.api.domain.Transition;
 import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldValue;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
@@ -34,7 +32,6 @@ import com.castsoftware.jira.util.Constants;
 import com.castsoftware.jira.util.CustomField;
 import com.castsoftware.jira.util.JiraException;
 import com.castsoftware.jira.util.JiraHelper;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 /**
@@ -42,15 +39,13 @@ import com.google.common.collect.Lists;
  * 
  * @author FME
  * @version 1.1
- * @param <JiraHelper>
  */
 public class CreateJiraIssues {
 
     /** The log. */
     public static Log log = LogFactory.getLog(CreateJiraIssues.class);
 
-    private JiraHelper jiraClient;
-    // private NullProgressMonitor progressMonitor = new NullProgressMonitor();
+    private final JiraHelper jiraClient;
 
     private Project project;
     private IssueType issueType;
@@ -87,9 +82,7 @@ public class CreateJiraIssues {
         IssueRestClient issueClient = jiraClient.getIssueClient();
         Iterable<Transition> trns = issueClient.getTransitions(is).get();
 
-        List<Transition> rslt = Lists.newArrayList(trns);
-
-        return rslt;
+        return Lists.newArrayList(trns);
     }
 
     private Transition nextTransitionId(Issue is, List<String> whiteList, List<String> blackList)
@@ -135,7 +128,7 @@ public class CreateJiraIssues {
      * Access Jira and retrieve the transition id
      * 
      * @param issueKey
-     * @param transitionName
+     * @param trnsId
      * @return the id of the transition
      * @throws ExecutionException
      * @throws InterruptedException
@@ -185,6 +178,7 @@ public class CreateJiraIssues {
                 throw new JiraException(
                         String.format("Invalid project short name [%s]", pProjectKey));
             }
+
             log.info(String.format("Working with Jira project [%s]", project.getName()));
 
             for (IssueType it : project.getIssueTypes()) {
@@ -202,7 +196,7 @@ public class CreateJiraIssues {
             }
 
             // can the component be assigned for the provided project?
-            if (pComponent != null && pComponent.trim().length() > 0) {
+            if (pComponent != null && !pComponent.trim().isEmpty()) {
                 for (BasicComponent c : project.getComponents()) {
                     if (c.getName().equals(pComponent))
                         component = c;
@@ -223,32 +217,31 @@ public class CreateJiraIssues {
 
             String txt = "When Identified as fixed by CAST, the Jira issue will be ";
             if (markIssueResolved) {
-
                 Iterable<Resolution> resolutions;
                 boolean validResotion = false;
+
                 try {
                     resolutions = jiraClient.getMetadataClient().getResolutions().get();
                     for (Resolution l : resolutions) {
                         if (l.getName().equalsIgnoreCase(this.resolutionTxt)) {
                             validResotion = true;
+                            break;
                         }
                     }
                 } catch (ExecutionException e) {
-                    throw new JiraException(
-                            String.format("Invalid resolution: %s", this.resolutionTxt));
+                    throw new JiraException(String.format("Invalid resolution: %s", this.resolutionTxt));
                 }
                 if (!validResotion)
-                    throw new JiraException(
-                            String.format("Invalid resolution: %s", this.resolutionTxt));
+                    throw new JiraException(String.format("Invalid resolution: %s", this.resolutionTxt));
 
-                txt += String.format("marked as resolved with a resolution message of \"%s\"",
-                        this.resolutionTxt);
+                txt += String.format("marked as resolved with a resolution message of \"%s\"", this.resolutionTxt);
             } else {
                 this.resolutionTxt = "Done";
                 txt += String.format("closed, with a resolution message of \"%s\"",
                         this.resolutionTxt);
             }
             log.info(txt);
+
         } catch (URISyntaxException | InterruptedException ex) {
             throw new JiraException("Unable to establish a connection with Jira", ex);
         }
@@ -261,13 +254,10 @@ public class CreateJiraIssues {
         String statusReopen = config.getWorkflow(Constants.WORKFLOW_STATUS_REOPEN);
         String statusDone = config.getWorkflow(Constants.WORKFLOW_STATUS_DONE);
         String statusProgress = config.getWorkflow(Constants.WORKFLOW_STATUS_PROGRESS);
-        List<String> transitionDone = Arrays
-                .asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_DONE).split(";"));
-        List<String> transitionReopen = Arrays
-                .asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_REOPEN).split(";"));
-        List<String> transitionBlacklist = Arrays
-                .asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_BLACKLIST).split(";"));
-        boolean debugWorkflow = Boolean.valueOf(config.getWorkflow(Constants.WORKFLOW_DEBUG));
+        List<String> transitionDone = Arrays.asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_DONE).split(";"));
+        List<String> transitionReopen = Arrays.asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_REOPEN).split(";"));
+        List<String> transitionBlacklist = Arrays.asList(config.getWorkflow(Constants.WORKFLOW_TRANSITION_BLACKLIST).split(";"));
+        boolean debugWorkflow = Boolean.parseBoolean(config.getWorkflow(Constants.WORKFLOW_DEBUG));
 
         IssueRestClient issueClient = jiraClient.getIssueClient();
 
@@ -275,14 +265,14 @@ public class CreateJiraIssues {
         for (int key : pViolationList.keySet()) {
             try { // if an error occurs don't stop the job, just report it
                 ActionPlanViolation violation = pViolationList.get(key);
-                log.info(String.format("Violation %d: %s", key & 0xFFFFFFFFL,
-                        violation.getMetricShortDescription()));
+
+                log.info(String.format("Violation %d: %s", key & 0xFFFFFFFFL, violation.getMetricShortDescription()));
                 totalNumOfIssues++;
 
                 int priority = violation.getPriority();
+
                 if (priority < 1 || priority > 3) {
-                    log.info(String.format("Unprioritized or Low priority issue, NOT added (%d)",
-                            violation.getObjectId()));
+                    log.info(String.format("Unprioritized or Low priority issue, NOT added (%d)", violation.getObjectId()));
                     totalNumOfUnprioritizedIssues++;
                 } else {
                     String srchStr = String.format("%s-%d", project.getName(), key);
@@ -294,6 +284,7 @@ public class CreateJiraIssues {
                     SearchResult searchResult = searchClient.searchJql(String.format(
                             "project = '%s' AND description ~ '%s' ORDER BY priority DESC",
                             project.getKey(), srchStr)).claim();
+
                     int totalIssuesFound = searchResult.getTotal();
                     if (totalIssuesFound > 0) {
                         for (BasicIssue issue : searchResult.getIssues()) {
@@ -301,50 +292,39 @@ public class CreateJiraIssues {
 
                             log.info(String.format("Matching Jira Issue found: %s", is.getKey()));
                             String issueStatusCode = is.getStatus().getName();
-                            if (castIssueCorrected
-                                    && !issueStatusCode.equalsIgnoreCase(statusDone)) {
-                                // The issue has been marked as done in CAST, do
-                                // the same in Jira
+                            if (castIssueCorrected && !issueStatusCode.equalsIgnoreCase(statusDone)) {
+                                // The issue has been marked as done in CAST, do the same in Jira
 
-                                Transition transitTo = null;
+                                Transition transitTo;
                                 while (true) {
-                                    transitTo = nextTransitionId(is, transitionDone,
-                                            transitionBlacklist);
+                                    transitTo = nextTransitionId(is, transitionDone, transitionBlacklist);
                                     if (!transitionTo(is, transitTo)) {
-                                        throw new JiraException(String.format(
-                                                "Unable to transition to %s", transitTo.getName()));
+                                        throw new JiraException(String.format("Unable to transition to %s", transitTo.getName()));
                                     }
 
                                     is = issueClient.getIssue(issue.getKey()).get();
-                                    if (issueStatusCode.equals(is.getStatus().getName())
-                                            || statusDone
-                                                    .equalsIgnoreCase(is.getStatus().getName())) {
+                                    if (issueStatusCode.equals(is.getStatus().getName()) || statusDone.equalsIgnoreCase(is.getStatus().getName())) {
                                         break;
                                     }
+
                                     issueStatusCode = is.getStatus().getName();
                                 }
+
                                 log.info("Issue closed");
                                 this.totalNumOfIssuesClosed++;
                                 continue;
-                            } else if (!castIssueCorrected
-                                    && !(issueStatusCode.equalsIgnoreCase(statusOpen)
-                                            || issueStatusCode.equalsIgnoreCase(statusReopen))) {
-                                // The issue is still open in CAST but marked as
-                                // closed in Jira, reopen it now
+                            } else if (!castIssueCorrected && !(issueStatusCode.equalsIgnoreCase(statusOpen) || issueStatusCode.equalsIgnoreCase(statusReopen))) {
+                                // The issue is still open in CAST but marked as closed in Jira, reopen it now
 
-                                Transition transitTo = null;
+                                Transition transitTo;
                                 while (true) {
-                                    transitTo = nextTransitionId(is, transitionReopen,
-                                            transitionBlacklist);
+                                    transitTo = nextTransitionId(is, transitionReopen, transitionBlacklist);
                                     if (!transitionTo(is, transitTo)) {
-                                        throw new JiraException(String.format(
-                                                "Unable to transition to %s", transitTo.getName()));
+                                        throw new JiraException(String.format("Unable to transition to %s", transitTo.getName()));
                                     }
 
                                     is = issueClient.getIssue(issue.getKey()).get();
-                                    if (issueStatusCode.equals(is.getStatus().getName())
-                                            || statusReopen
-                                                    .equalsIgnoreCase(is.getStatus().getName())) {
+                                    if (issueStatusCode.equals(is.getStatus().getName()) || statusReopen.equalsIgnoreCase(is.getStatus().getName())) {
                                         break;
                                     }
                                     issueStatusCode = is.getStatus().getName();
@@ -367,13 +347,12 @@ public class CreateJiraIssues {
                         iib.setProjectKey(project.getKey());
                         iib.setIssueType(issueType);
 
-                        iib.setSummary(getJiraFieldComposition(violation, config,
-                                Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION));
+                        iib.setSummary(getJiraFieldComposition(violation, config, Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION));
 
-                        String description = getJiraFieldComposition(violation, config,
-                                Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION)
-                                + srchStr;
+                        String description = getJiraFieldComposition(violation, config, Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION) + srchStr;
                         iib.setDescription(description);
+
+                        iib.setPriorityId((long) priority);
 
                         if (component != null) {
                             iib.setComponents(component);
@@ -386,14 +365,14 @@ public class CreateJiraIssues {
                             for (CustomField cf : cfl) {
                                 String jiraField = String.format("%s.JiraField", cf.getName()); 
                                 String value = getJiraFieldComposition(violation, config,jiraField);
+
                                 if (value != null && !value.isEmpty()) {
                                     switch (cf.getType().toLowerCase()) {
                                         case CustomField.CUSTOM_TEXT_FIELD_TYPE :
                                             iib.setFieldValue(cf.getName(), value);
                                             break;
                                         case CustomField.CUSTOM_SELECT_FIELD_TYPE :
-                                            ComplexIssueInputFieldValue cv = ComplexIssueInputFieldValue
-                                                    .with("value", value.replace("\n", ""));
+                                            ComplexIssueInputFieldValue cv = ComplexIssueInputFieldValue.with("value", value.replace("\n", ""));
                                             iib.setFieldValue(cf.getName(), cv);
                                             break;
                                     }
@@ -407,16 +386,14 @@ public class CreateJiraIssues {
 
                         // add comment
                         Issue is = issueClient.getIssue(issueObj.getKey()).get();
-                        issueClient.addComment(is.getCommentsUri(),
-                                Comment.valueOf("Issue create by CAST"));
+                        issueClient.addComment(is.getCommentsUri(), Comment.valueOf("Issue created by CAST"));
 
                         this.totalNumOfIssuesAdded++;
                     } else {
                         log.info("Issue has already been closed in AIP");
                     }
                 }
-            } catch (RestClientException | JiraException | InterruptedException
-                    | ExecutionException ex) {
+            } catch (RestClientException | JiraException | InterruptedException | ExecutionException ex) {
                 this.totalNumOfIssuesNotAddedByError++;
                 log.error(ex.getMessage());
             }
@@ -431,28 +408,21 @@ public class CreateJiraIssues {
      */
     private void loadConfiguration(Configuration loadConfig, ActionPlanViolation violation) {
         // log.info("------------------------------------------------");
-        loadConfig.getCastToJiraFieldsMapping(
-                Constants.FIELD_MAPPING_LABEL_ADDED_TO_ACTION_PLAN_DATE);
+        loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_ADDED_TO_ACTION_PLAN_DATE);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_REASON_DESCRIPTION);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_OUTPUT_DESCRIPTION);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_REFERENCE_DESCRIPTION);
 
-        log.info(loadConfig
-                .getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_METRIC_SHORT_DESCRIPTION)
+        log.info(loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_METRIC_SHORT_DESCRIPTION)
                 + violation.getMetricShortDescription());
 
-        loadConfig
-                .getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_METRIC_LONG_DESCRIPTION);
+        loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_METRIC_LONG_DESCRIPTION);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_OBJECT_FULL_NAME);
-        loadConfig
-                .getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_REMEDIATION_DESCRIPTION);
-        loadConfig.getCastToJiraFieldsMapping(
-                Constants.FIELD_MAPPING_LABEL_REMEDIATION_EXAMPLE_DESCRIPTION);
+        loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_REMEDIATION_DESCRIPTION);
+        loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_REMEDIATION_EXAMPLE_DESCRIPTION);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_TOTAL_DESCRIPTION);
-        loadConfig.getCastToJiraFieldsMapping(
-                Constants.FIELD_MAPPING_LABEL_VIOLATION_EXAMPLE_DESCRIPTION);
-        loadConfig.getCastToJiraFieldsMapping(
-                Constants.FIELD_MAPPING_LABEL_ACTION_DEFINED_DESCRIPTION);
+        loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_VIOLATION_EXAMPLE_DESCRIPTION);
+        loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_ACTION_DEFINED_DESCRIPTION);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_LINE_START);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_LINE_END);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE);
@@ -463,30 +433,24 @@ public class CreateJiraIssues {
      * 
      * @param temp
      *            the temp
-     * @param fieldmap
-     *            the fieldmap
+     * @param fieldMap
+     *            the fieldMap
      * @param fieldType
      *            the field type
      * @return the jira field composition
      * @throws JiraException 
      */
-    public String getJiraFieldComposition(ActionPlanViolation temp, Configuration fieldmap,
+    public String getJiraFieldComposition(ActionPlanViolation temp, Configuration fieldMap,
             String fieldType) throws JiraException {
-        String field = new String();
-        String fields=null;
+
+        String field;
+        String fields;
         
-        if (fieldType.endsWith(".JiraField"))
-        {
-            fields = fieldmap.getJiraFields(fieldType);
+        if (fieldType.endsWith(".JiraField")) {
+            fields = fieldMap.getJiraFields(fieldType);
         } else {
             return "";
         }
-//        if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION)) {
-//            fields = fieldmap.getJiraFields(Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION);
-//        } else {
-//            fields = fieldmap
-//                    .getJiraFields(Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION);
-//        }
         
         StringBuilder result = new StringBuilder();
         StringTokenizer tokens = new StringTokenizer(fields, ";");
@@ -497,10 +461,11 @@ public class CreateJiraIssues {
             if (log.isDebugEnabled()) {
                 log.debug(" Field to include in Jira " + fieldType + " : " + field);
             }
+
             /**
              * Add the field label
              */
-            if (fields.indexOf(field) != -1) {
+            if (fields.contains(field)) {
                 if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION)) {
                     if (!noteAdded) {
                         // add CAST reference
@@ -510,7 +475,7 @@ public class CreateJiraIssues {
                         noteAdded = true;
                     }
 
-                    result.append(fieldmap.getCastToJiraFieldsMapping(field)).append(" ");
+                    result.append(fieldMap.getCastToJiraFieldsMapping(field)).append(" ");
                 }
 
                 /**
@@ -534,13 +499,11 @@ public class CreateJiraIssues {
                     result.append(temp.getReference());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_REMEDIATION_DESCRIPTION)) {
                     result.append(temp.getRemediation());
-                } else if (field
-                        .equals(Constants.FIELD_MAPPING_LABEL_REMEDIATION_EXAMPLE_DESCRIPTION)) {
+                } else if (field.equals(Constants.FIELD_MAPPING_LABEL_REMEDIATION_EXAMPLE_DESCRIPTION)) {
                     result.append(temp.getRemediationExample());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_TOTAL_DESCRIPTION)) {
-                    result.append(temp.getTotales());
-                } else if (field
-                        .equals(Constants.FIELD_MAPPING_LABEL_VIOLATION_EXAMPLE_DESCRIPTION)) {
+                    result.append(temp.getTotals());
+                } else if (field.equals(Constants.FIELD_MAPPING_LABEL_VIOLATION_EXAMPLE_DESCRIPTION)) {
                     result.append(temp.getViolationExample());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE)) {
                     result.append(temp.getSourceCode());
@@ -551,18 +514,16 @@ public class CreateJiraIssues {
                 }
                 
                 // check custom fields 
-                List<CustomField> cfl = fieldmap.getCustomFields();
+                List<CustomField> cfl = fieldMap.getCustomFields();
                 if (cfl != null) {
-                    for (CustomField cf: cfl)
-                    {
+                    for (CustomField cf: cfl) {
                         String name=String.format("%s.label",cf.getName());
                         if (field.equals(name)) {
-                            String value = fieldmap.getFieldValue(name);
+                            String value = fieldMap.getFieldValue(name);
                             result.append(value);
                         }
                     }
                 }
-                
                 
                 /**
                  * do we add a space or carriage return - Summary field gets a
@@ -574,8 +535,8 @@ public class CreateJiraIssues {
                     result.append("\n");
                 }
             }
-
         }
+
         if (result.length() == 0) {
             if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION)) {
                 log.debug("Default field content to include in Jira for Summary field");
@@ -591,27 +552,25 @@ public class CreateJiraIssues {
                 result.append(temp.getRemediation());
                 result.append(temp.getViolationExample());
                 result.append(temp.getRemediationExample());
-                result.append(temp.getTotales());
+                result.append(temp.getTotals());
                 result.append(temp.getOutput());
             }
 
         } else {
             if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION)) {
-                result.append(fieldmap.getCastToJiraFieldsMapping(
-                        Constants.FIELD_MAPPING_LABEL_CASTID_DESCRIPTION));
+                result.append(fieldMap.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_CASTID_DESCRIPTION));
                 int maxChar = 30 * 1024;
-                int maxLength = (result.length() < maxChar) ? result.length() : maxChar;
+                int maxLength = Math.min(result.length(), maxChar);
 
                 result.setLength(maxLength);
                 result.append(" ");
             } else if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION)) {
                 // need to limit to 255 characters
                 int maxChar = 250;
-                int maxLength = (result.length() < maxChar) ? result.length() : maxChar;
+                int maxLength = Math.min(result.length(), maxChar);
 
                 result.setLength(maxLength);
             }
-
         }
 
         return result.toString();
@@ -646,7 +605,7 @@ public class CreateJiraIssues {
     }
 
     /**
-     * The number of issue that have already exist and were not added to Jira
+     * The number of issue that have already existed and were not added to Jira
      * 
      * @return
      */

@@ -17,14 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import net.rcarz.jiraclient.Issue.FluentCreate;
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Represents an issue component.
@@ -44,7 +43,8 @@ public class Component extends Resource {
          * The JSON request that will be built incrementally as fluent methods
          * are invoked.
          */
-        JSONObject req = new JSONObject();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode req = mapper.createObjectNode();
 
         /**
          * Creates a new fluent.
@@ -113,7 +113,7 @@ public class Component extends Resource {
          * @throws JiraException when the create fails
          */
         public Component execute() throws JiraException {
-            JSON result = null;
+            JsonNode result;
 
             try {
                 result = restclient.post(getRestUri(null), req);
@@ -121,12 +121,11 @@ public class Component extends Resource {
                 throw new JiraException("Failed to create issue", ex);
             }
 
-            if (!(result instanceof JSONObject) || !((JSONObject) result).containsKey("id")
-                    || !(((JSONObject) result).get("id") instanceof String)) {
+            if (result == null || !result.has("id") || !result.get("id").isTextual()) {
                 throw new JiraException("Unexpected result on create component");
             }
 
-            return new Component(restclient, (JSONObject) result);
+            return new Component(restclient, result);
         }
     }
 
@@ -140,48 +139,46 @@ public class Component extends Resource {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected Component(RestClient restclient, JSONObject json) {
+    protected Component(RestClient restclient, JsonNode json) {
         super(restclient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        self = Field.getString(map.get("self"));
-        id = Field.getString(map.get("id"));
-        name = Field.getString(map.get("name"));
-        description = Field.getString(map.get("description"));
-        isAssigneeTypeValid = Field.getBoolean(map.get("isAssigneeTypeValid"));
+    private void deserialize(JsonNode json) {
+        self = Field.getString(json.get("self"));
+        id = Field.getString(json.get("id"));
+        name = Field.getString(json.get("name"));
+        description = Field.getString(json.get("description"));
+        isAssigneeTypeValid = Field.getBoolean(json.get("isAssigneeTypeValid"));
     }
 
     /**
      * Retrieves the given component record.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param id Internal JIRA ID of the component
      *
      * @return a component instance
      *
      * @throws JiraException when the retrieval fails
      */
-    public static Component get(RestClient restclient, String id)
+    public static Component get(RestClient restClient, String id)
         throws JiraException {
 
-        JSON result = null;
+        JsonNode result;
 
         try {
-            result = restclient.get(getRestUri(id));
+            result = restClient.get(getRestUri(id));
         } catch (Exception ex) {
             throw new JiraException("Failed to retrieve component " + id, ex);
         }
 
-        if (!(result instanceof JSONObject))
+        if (result == null || !result.isObject())
             throw new JiraException("JSON payload is malformed");
 
-        return new Component(restclient, (JSONObject)result);
+        return new Component(restClient, result);
     }
 
     @Override

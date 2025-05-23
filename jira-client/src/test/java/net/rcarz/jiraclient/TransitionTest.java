@@ -1,38 +1,36 @@
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSONObject;
-import net.sf.json.JSONSerializer;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 
 public class TransitionTest {
 
+    static ObjectMapper mapper = new ObjectMapper();
+
     @Test
-    public void TransitionInit(){
+    public void TransitionInit() throws JsonProcessingException {
         Transition transition = new Transition(null, getTestJson());
     }
 
     @Test
-    public void testDeserializeJSON(){
+    public void testDeserializeJSON() throws JsonProcessingException {
         Transition transition = new Transition(null, getTestJson());
         assertEquals("21", transition.getId());
         assertEquals("Done", transition.getName());
     }
 
     @Test
-    public void testToStatus() {
+    public void testToStatus() throws JsonProcessingException {
         Transition transition = new Transition(null, getTestJson());
         Status toStatus = transition.getToStatus();
         assertEquals("Done", toStatus.getName());
@@ -40,7 +38,7 @@ public class TransitionTest {
     }
 
     @Test
-    public void testTransitionToString() throws URISyntaxException {
+    public void testTransitionToString() throws URISyntaxException, JsonProcessingException {
         Transition transition = new Transition(new RestClient(null, new URI("/123/asd")), getTestJson());
         assertEquals("Done", transition.toString());
     }
@@ -48,13 +46,12 @@ public class TransitionTest {
     @Test
     public void testGetFields() throws Exception {
         Transition transition = new Transition(new RestClient(null, new URI("/123/asd")), getTestJson());
-        final Map fields = transition.getFields();
+        JsonNode fields = transition.getFields();
         Assert.assertEquals(2,fields.size());
-
     }
 
-    public static JSONObject getTestJson() {
-        JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON(
+    public static JsonNode getTestJson() throws JsonProcessingException {
+        String jsonString =
                 "{\n" +
                         "  \"id\": \"21\",\n" +
                         "  \"name\": \"Done\",\n" +
@@ -135,9 +132,9 @@ public class TransitionTest {
                         "      ]\n" +
                         "    }\n" +
                         "  }\n" +
-                        "}");
+                        "}";
 
-        return  jsonObject;
+        return mapper.readTree(jsonString);
     }
 
 }

@@ -124,20 +124,19 @@ public class GetCastActionPlan {
 
 	/**
 	 * Execute the connection to the database & sql statement.
-	 * 
-	 * @throws SQLException
-	 *             the SQL exception
+	 *
 	 * @throws Exception
 	 *             the exception
 	 */
-	private void execute() throws SQLException, Exception {
+	private void execute() throws Exception {
 		try {
 			DatabaseConnection conn = new DatabaseConnection(getCastusername(),
 					getCastuserpassword(), getHost(), getDatabase(), getPort(),
 					getDatabaseProvider());
-			SqlStatements sql = new SqlStatements(getAppname(),
-					getSchemaProfile(), getDatabaseProvider());
+
+			SqlStatements sql = new SqlStatements(getAppname(), getSchemaProfile(), getDatabaseProvider());
 			map = sql.getActionPlan(conn.getDBConnection());
+
 			conn.closeConnection();
 		} catch (Exception e) {
 			log.fatal(
@@ -145,7 +144,6 @@ public class GetCastActionPlan {
 					e);
 			throw e;
 		}
-
 	}
 
 	/**

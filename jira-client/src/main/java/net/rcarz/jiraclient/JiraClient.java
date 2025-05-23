@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of httpclient5 and Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
 import java.io.IOException;
@@ -27,13 +29,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
-
-import net.sf.json.JSON;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 
 /**
  * A simple JIRA REST client.
@@ -61,10 +60,10 @@ public class JiraClient {
      * @throws JiraException 
      */
     public JiraClient(String uri, ICredentials creds) throws JiraException {
-    	PoolingClientConnectionManager connManager = new PoolingClientConnectionManager();
+        PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
         connManager.setDefaultMaxPerRoute(20);
         connManager.setMaxTotal(40);
-        HttpClient httpclient = new DefaultHttpClient(connManager);
+        CloseableHttpClient httpclient = HttpClients.custom().setConnectionManager(connManager).build();
 
         restclient = new RestClient(httpclient, creds, URI.create(uri));
 
@@ -362,12 +361,13 @@ public class JiraClient {
     public List<Priority> getPriorities() throws JiraException {
         try {
             URI uri = restclient.buildURI(Resource.getBaseUri() + "priority");
-            JSON response = restclient.get(uri);
-            JSONArray prioritiesArray = JSONArray.fromObject(response);
+            JsonNode response = restclient.get(uri);
+            if (!response.isArray()) {
+                throw new JiraException("Expected JSON array for priorities");
+            }
 
-            List<Priority> priorities = new ArrayList<Priority>(prioritiesArray.size());
-            for (int i = 0; i < prioritiesArray.size(); i++) {
-                JSONObject p = prioritiesArray.getJSONObject(i);
+            List<Priority> priorities = new ArrayList<>(response.size());
+            for (JsonNode p : response) {
                 priorities.add(new Priority(restclient, p));
             }
 
@@ -389,14 +389,14 @@ public class JiraClient {
      * @throws JiraException when the search fails
      */
     public List<CustomFieldOption> getCustomFieldAllowedValues(String field, String project, String issueType) throws JiraException {
-        JSONObject createMetadata = (JSONObject) Issue.getCreateMetadata(restclient, project, issueType);
-        JSONObject fieldMetadata = (JSONObject) createMetadata.get(field);
-        List<CustomFieldOption> customFieldOptions = Field.getResourceArray(
-                CustomFieldOption.class,
-                fieldMetadata.get("allowedValues"),
-            restclient
-        );
-        return customFieldOptions;
+        JsonNode createMetadata = Issue.getCreateMetadata(restclient, project, issueType);
+        JsonNode fieldMetadata = createMetadata.get(field);
+
+        if (fieldMetadata == null || !fieldMetadata.has("allowedValues")) {
+            throw new JiraException("Field metadata for '" + field + "' is missing or does not contain allowed values");
+        }
+
+        return Field.getResourceArray(CustomFieldOption.class, fieldMetadata.get("allowedValues"), restclient);
     }
 
     /**
@@ -410,14 +410,14 @@ public class JiraClient {
      * @throws JiraException when the search fails
      */
     public List<Component> getComponentsAllowedValues(String project, String issueType) throws JiraException {
-        JSONObject createMetadata = (JSONObject) Issue.getCreateMetadata(restclient, project, issueType);
-        JSONObject fieldMetadata = (JSONObject) createMetadata.get(Field.COMPONENTS);
-        List<Component> componentOptions = Field.getResourceArray(
-                Component.class,
-                fieldMetadata.get("allowedValues"),
-            restclient
-        );
-        return componentOptions;
+        JsonNode createMetadata = Issue.getCreateMetadata(restclient, project, issueType);
+        JsonNode fieldMetadata = createMetadata.get(Field.COMPONENTS);
+
+        if (fieldMetadata == null || !fieldMetadata.has("allowedValues")) {
+            throw new JiraException("Component field metadata is missing or invalid");
+        }
+
+        return Field.getResourceArray(Component.class, fieldMetadata.get("allowedValues"), restclient);
     }
 
     public RestClient getRestClient() {
@@ -437,13 +437,15 @@ public class JiraClient {
     public List<Project> getProjects() throws JiraException {
         try {
             URI uri = restclient.buildURI(Resource.getBaseUri() + "project");
-            JSON response = restclient.get(uri);
-            JSONArray projectsArray = JSONArray.fromObject(response);
+            JsonNode response = restclient.get(uri);
 
-            List<Project> projects = new ArrayList<Project>(projectsArray.size());
-            for (int i = 0; i < projectsArray.size(); i++) {
-                JSONObject p = projectsArray.getJSONObject(i);
-                projects.add(new Project(restclient, p));
+            if (!response.isArray()) {
+                throw new JiraException("Expected an array of projects in JSON response");
+            }
+
+            List<Project> projects = new ArrayList<>(response.size());
+            for (JsonNode projectNode : response) {
+                projects.add(new Project(restclient, projectNode));
             }
 
             return projects;
@@ -461,8 +463,8 @@ public class JiraClient {
     public Project getProject(String key) throws JiraException {
         try {
             URI uri = restclient.buildURI(Resource.getBaseUri() + "project/" + key);
-            JSON response = restclient.get(uri);
-            return new Project(restclient, (JSONObject) response);
+            JsonNode response = restclient.get(uri);
+            return new Project(restclient, response);
         } catch (Exception ex) {
             throw new JiraException(ex.getMessage(), ex);
         }
@@ -476,13 +478,15 @@ public class JiraClient {
     public List<IssueType> getIssueTypes() throws JiraException {
         try {
             URI uri = restclient.buildURI(Resource.getBaseUri() + "issuetype");
-            JSON response = restclient.get(uri);
-            JSONArray issueTypeArray = JSONArray.fromObject(response);
+            JsonNode response = restclient.get(uri);
 
-            List<IssueType> issueTypes = new ArrayList<IssueType>(issueTypeArray.size());
-            for (int i = 0; i < issueTypeArray.size(); i++) {
-                JSONObject it = issueTypeArray.getJSONObject(i);
-                issueTypes.add(new IssueType(restclient, it));
+            if (!response.isArray()) {
+                throw new JiraException("Expected an array of issue types in JSON response");
+            }
+
+            List<IssueType> issueTypes = new ArrayList<>(response.size());
+            for (JsonNode issueTypeNode : response) {
+                issueTypes.add(new IssueType(restclient, issueTypeNode));
             }
 
             return issueTypes;
@@ -527,7 +531,7 @@ public class JiraClient {
                 }
             }
 
-            if (list.size() > 0) {
+            if (!list.isEmpty()) {
                 result.add(new IssueHistory(record,list));
             }
         }
@@ -537,25 +541,31 @@ public class JiraClient {
     public ArrayList<IssueHistory> getIssueChangeLog(Issue issue) throws JiraException {
         try {
             ArrayList<IssueHistory> changes = null;
-            JSON response = getNextPortion(issue, 0);
+            JsonNode response = getNextPortion(issue, 0);
 
             while (true) {
-                JSONObject object = JSONObject.fromObject(response);
-                Object opers = object.get("changelog");
-                object = JSONObject.fromObject(opers);
-                Integer totalObj = (Integer)object.get("total");
-                JSONArray histories = JSONArray.fromObject(object.get("histories"));
+                JsonNode changelogNode = response.get("changelog");
+
+                if (changelogNode == null || changelogNode.isMissingNode()) {
+                    throw new JiraException("Missing 'changelog' node in response");
+                }
+
+                int total = changelogNode.path("total").asInt();
+                JsonNode histories = changelogNode.path("histories");
+
+                if (!histories.isArray()) {
+                    throw new JiraException("Expected 'histories' to be an array");
+                }
 
                 if (changes == null) {
-                    changes = new ArrayList<IssueHistory>(totalObj);
+                    changes = new ArrayList<>(total);
                 }
 
-                for (int i = 0; i < histories.size(); i++) {
-                    JSONObject p = histories.getJSONObject(i);
-                    changes.add(new IssueHistory(restclient, p));
+                for (JsonNode historyNode : histories) {
+                    changes.add(new IssueHistory(restclient, historyNode));
                 }
 
-                if (changes.size() >= totalObj) {
+                if (changes.size() >= total) {
                     break;
                 } else {
                     response = getNextPortion(issue,changes.size());
@@ -568,7 +578,7 @@ public class JiraClient {
         }
     }
 
-    private JSON getNextPortion(Issue issue, Integer startAt)
+    private JsonNode getNextPortion(Issue issue, Integer startAt)
             throws URISyntaxException, RestException, IOException {
 
         Map<String, String> params = new HashMap<String, String>();

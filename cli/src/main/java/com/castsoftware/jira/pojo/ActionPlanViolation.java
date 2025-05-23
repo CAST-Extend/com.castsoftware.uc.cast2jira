@@ -59,8 +59,8 @@ public class ActionPlanViolation {
   /** The output. */
   private String output;
 
-  /** The totales. */
-  private String totales;
+  /** The totals. */
+  private String totals;
 
   String         sourcePath;
   int            lineStart;
@@ -103,31 +103,29 @@ public class ActionPlanViolation {
   public ActionPlanViolation(long object_id, String tag, int priority, String actionDate, String firstSnapshotDate, String actionDef,
       String objectFullName, int metricId, String metricShortDescription, String reason, String metricLongDescription,
       String remediation, String reference, String violationExample, String remediationExample, String output,
-      String totales, String sourcePath, int lineStart, int lineEnd, String sourceCode, String techCriteria,
+      String totals, String sourcePath, int lineStart, int lineEnd, String sourceCode, String techCriteria,
       String businessCriteria, int violationStatus)
   {
 
     setObjectId(object_id);
 
-    if (tag != null)
-    {
+    if (tag != null) {
       switch (tag) {
-      case "low":
-        priority = 4;
-        break;
-      case "moderate":
-        priority = 3;
-        break;
-      case "high":
-        priority = 2;
-        break;
-      case "extreme":
-        priority = 1;
-        break;
-
-      }
+        case "low":
+          setPriority(4);
+          break;
+        case "moderate":
+          setPriority(3);
+          break;
+        case "high":
+          setPriority(2);
+          break;
+        case "extreme":
+          setPriority(1);
+          break;
+        }
     }
-    setPriority(priority);
+
     setFirstSnapshotDate(firstSnapshotDate);
     setActionDate(actionDate);
     setActionDef(actionDef);
@@ -141,7 +139,7 @@ public class ActionPlanViolation {
     setViolationExample(violationExample);
     setRemediationExample(remediationExample);
     setOutput(output);
-    setTotales(totales);
+    setTotals(totals);
     setSourcePath(sourcePath);
     setLineStart(lineStart);
     setLineEnd(lineEnd);
@@ -161,7 +159,7 @@ public class ActionPlanViolation {
     String crlf = System.getProperty("line.separator");
     String src = getSourceCode();
 
-    StringBuffer rslt = new StringBuffer().append("\n");
+    StringBuilder rslt = new StringBuilder().append("\n");
     String[] lines = src.split(crlf);
     int cLine = 0;
     for (String ln : lines)
@@ -277,18 +275,15 @@ public class ActionPlanViolation {
    * @return the fields concatenated
    * @throws ParseException
    */
-  public String getFieldsConcatenated() throws ParseException
-  {
+  public String getFieldsConcatenated() throws ParseException {
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     Date snapshotDate = sdf.parse(this.actionDate);
     Date cutDate = sdf.parse("2017-05-02 00:00:00.000");
 
-    if (snapshotDate.before(cutDate))
-    {
-      return Integer.toString(this.priority) + this.actionDate + this.actionDef + this.objectFullName
+    if (snapshotDate.before(cutDate)) {
+      return this.priority + this.actionDate + this.actionDef + this.objectFullName
           + this.metricShortDescription;
-    } else
-    {
+    } else {
       return String.format("%s%d%d", this.firstSnapshotDate, this.objectId, this.metricId);
     }
   }
@@ -497,29 +492,29 @@ public class ActionPlanViolation {
   }
 
   /**
-   * Gets the totales.
+   * Gets the totals.
    * 
-   * @return the totales
+   * @return the totals
    */
-  public String getTotales()
+  public String getTotals()
   {
-    if (totales == null)
+    if (totals == null)
     {
-      totales = Constants.FIELD_VALUE_WHEN_IS_NULL;
+      totals = Constants.FIELD_VALUE_WHEN_IS_NULL;
     }
-    return totales;
+    return totals;
   }
 
   /**
-   * Sets the totales.
+   * Sets the totals.
    * 
-   * @param totales
-   *          the new totales
+   * @param totals
+   *          the new totals
    */
-  public void setTotales(String totales)
+  public void setTotals(String totals)
   {
-    if (totales != null)
-      this.totales = totales.replaceAll("[\"]", "");
+    if (totals != null)
+      this.totals = totals.replaceAll("[\"]", "");
   }
 
   /**
@@ -581,7 +576,7 @@ public class ActionPlanViolation {
   public String getSourceCode()
   {
     int maxChar = 28672;
-    int maxLength = (sourceCode.length() < maxChar) ? sourceCode.length() : maxChar;
+    int maxLength = Math.min(sourceCode.length(), maxChar);
     return sourceCode.substring(0, maxLength) + (maxLength == maxChar ? "..." : "");
   }
 

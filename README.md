@@ -21,8 +21,7 @@ This document is to be used by the CAST Delivery Specialist or onsite administra
 ## Summary
 This document provides installation, deployment and usage instructions for the CAST to Jira Extension.  
 
-<a name="releaseinfo">
-# Release History 
+## Release History 
 ### CastToJira CLI
 | Version  | Author | Description |
 | ----- | -------------------- | --------- |
@@ -38,17 +37,17 @@ This document provides installation, deployment and usage instructions for the C
 | 2.11.0 | Nevin Kaplan | Allowed for more than one application |
 | 1.7.0 | Nevin Kaplan | Merged component version history |
 
-### CLI and Jenkins Plugin
-| Version  | Author | Description |
-| ----- | -------------------- | --------- |
-| 1.8.0 | Nevin Kaplan  | * eliminate third party AIP in favor of the Atlassian supported version<br>* reworked login to accommodate new Atlassian requirements <br>* reworked status transitions to work with SONY's standard workflow |
-| 1.9.0 | Nevin Kaplan | Security Enhancements |
-| 1.10.0 | Nevin Kaplan| * Added workflow properties<br> * various bug fixes | 
-| 1.10.1 | Nevin Kaplan| Corrected workflow issue  | 
-| 1.10.2 | Nevin Kaplan| * Converted transaction properties to comma <br> * separated lists <br> * Added debug.workflow property| 
-| 1.10.3 | Nevin Kaplan|* Aligned versions <br>*replace crupt jar file | 
-| 1.11.0 | Nevin Kaplan | Updated library pacakage version to remove CVE's|
-</a>
+### CLI and Jenkins Plugin (New)
+| Version | Author          | Description                                                                                                                                                                                                   |
+|---------|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1.8.0   | Nevin Kaplan    | * eliminate third party AIP in favor of the Atlassian supported version<br>* reworked login to accommodate new Atlassian requirements <br>* reworked status transitions to work with SONY's standard workflow |
+| 1.9.0   | Nevin Kaplan    | Security Enhancements                                                                                                                                                                                         |
+| 1.10.0  | Nevin Kaplan    | * Added workflow properties<br> * various bug fixes                                                                                                                                                           | 
+| 1.10.1  | Nevin Kaplan    | Corrected workflow issue                                                                                                                                                                                      | 
+| 1.10.2  | Nevin Kaplan    | * Converted transaction properties to comma <br> * separated lists <br> * Added debug.workflow property                                                                                                       | 
+| 1.10.3  | Nevin Kaplan    | * Aligned versions <br>*replace crupt jar file                                                                                                                                                                | 
+| 1.11.0  | Nevin Kaplan    | Updated library package version to remove CVE's                                                                                                                                                               |
+| 2.0.0   | Matthieu Mabyre | Updated all major libraries (json to Jackson, httpclient, jira-rest-client, ...), refactored, improved and fixed all code issues, added distribution module and the related final packaging.                  |                                                                                         |
 
 # Use Cases
 Transfer the CAST Action Plan to Jira to allow easier access by the clients development team.    
@@ -58,7 +57,7 @@ Transfer the CAST Action Plan to Jira to allow easier access by the clients deve
 1. Explode the contents of the file
 1. Login to Jenkins and go to the Manage Plugin screen (Manage Jenkins → Manager Plugins)
 1. Go to the Advanced tab - Upload Plugin section
-1. Click on the Choose File button and locate the CastToJiraConnector.hpi file downloaded (found in the exploded zip)
+1. Click on the Choose File button and locate the cast2Jira.hpi file downloaded (found in the exploded zip)
 1. Click the Upload button
 1. If requested, restart Jenkins
 1. Go to the Manage Jenkins-->Configure System, CAST Action Plan to Jira Setup section
@@ -96,21 +95,21 @@ Normally when an issue is marked as resolved in CAST, the Cast2Jira utility will
 
 java -jar CastToJira.jar <arguments ...>
 
-| Argument | Description |
-|----------|-------------|
-| applicationname  | CAST AIP Application name found in AIP Console and Management Studio. |
-| castusername  | The User Name used to login the AIP database. |
-| castuserpassword  | The User Password used to login the AIP database. |
-| databasehost  | Hostname or IP Address where the database server is running. |
-| databaseport  | Database listening port |
-| databasename  | Database name. If Oracle has been selected as database provider, this parameter is SID. |
-| databaseprovider  | Database provider parameter is use to identify the central database server type being used, CSS, Oracle or SQLServer. <br><dir> * CSS – CAST Storage Server <br> * Oracle <br> * SQLServer |
-| databaseschema  | The AIP Central database schema name |
-| jiraissuetype  | The Jira issue type |
-| jiraprojectname  | The Jira project name |
-| jirarestapiurl  | The Jira REST API name |
-| jirausername   | The Jira user name |
-| jirauserpassword  | The Jira user password or API Id |
+| Argument | Description                                                                                                                                                                                         |
+|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| applicationname  | CAST AIP Application name found in AIP Console and Management Studio.                                                                                                                               |
+| castusername  | The User Name used to login the AIP database.                                                                                                                                                       |
+| castuserpassword  | The User Password used to login the AIP database.                                                                                                                                                   |
+| databasehost  | Hostname or IP Address where the database server is running.                                                                                                                                        |
+| databaseport  | Database listening port                                                                                                                                                                             |
+| databasename  | Database name. If Oracle has been selected as database provider, this parameter is SID.                                                                                                             |
+| databaseprovider  | Database provider parameter is use to identify the central database server type being used, CSS/Postgres, Oracle or SQLServer. <br><dir> * CSS – CAST Storage Server <br> * Oracle <br> * SQLServer |
+| databaseschema  | The AIP Central database schema name                                                                                                                                                                |
+| jiraissuetype  | The Jira issue type                                                                                                                                                                                 |
+| jiraprojectname  | The Jira project name                                                                                                                                                                               |
+| jirarestapiurl  | The Jira REST API name                                                                                                                                                                              |
+| jirausername   | The Jira user name                                                                                                                                                                                  |
+| jirauserpassword  | The Jira user password or API Id                                                                                                                                                                    |
 
 
 
@@ -163,5 +162,5 @@ The final transition proerty is blacklist, used to prevent the extension from us
 
 Under normal conditions if an issue does not exist in Jira and has already been marked as corrected in AIP, it will NOT be added to Jira.  The last property, debug.workflow, will add all issues to Jira, even if they are marked as corrected in AIP. When CAST2Jira is run and the debug.workflow is set to true, the issue will be added to Jira.  The next time it is run, it will attempt to close it in Jira.  
 
-All properties are case insensitive. 
+All properties are case-insensitive. 
 

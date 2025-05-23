@@ -17,13 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-19: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Contains information about an issue change log entry. Change log entries are
@@ -50,28 +51,30 @@ public class ChangeLogEntry extends Resource {
     /**
      * Creates a change log from a JSON payload.
      *
-     * @param restclient REST client instance
+     * @param restClient REST client instance
      * @param json JSON payload
      */
-    protected ChangeLogEntry(RestClient restclient, JSONObject json) {
-        super(restclient);
+    protected ChangeLogEntry(RestClient restClient, JsonNode json) {
+        super(restClient);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
     /**
      * Deserializes a change log entry from a json payload.
      * @param json the json payload
      */
-    private void deserialise(JSONObject json) {
-        Map map = json;
+    private void deserialize(JsonNode json) {
+        JsonNode idNode = json.get("id");
+        JsonNode authorNode = json.get("author");
+        JsonNode createdNode = json.get("created");
+        JsonNode itemsNode = json.get(Field.CHANGE_LOG_ITEMS);
 
-        id = Field.getString(map.get("id"));
-        author = Field.getResource(User.class, map.get("author"), restclient);
-        created = Field.getDateTime(map.get("created"));
-        items = Field.getResourceArray(ChangeLogItem.class, map.get(
-                Field.CHANGE_LOG_ITEMS), restclient);
+        id = Field.getString(idNode);
+        author = Field.getResource(User.class, authorNode, restclient);
+        created = Field.getDateTime(createdNode);
+        items = Field.getResourceArray(ChangeLogItem.class, itemsNode, restclient);
     }
 
     /**

@@ -1,12 +1,15 @@
+/* Update MMA 2025-05-20: use of Jackson for JSON handling and replacement of PowerMock by Mockito */
+
 package net.rcarz.jiraclient;
 
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
-import org.powermock.api.mockito.PowerMockito;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.*;
 
 public class WatchesTest {
 
@@ -20,51 +23,54 @@ public class WatchesTest {
         Watches watches = new Watches(null, getTestJSON());
 
         assertFalse(watches.isWatching());
-        assertEquals(watches.getWatchCount(), 0);
-        assertEquals(watches.getId(), "10");
-        assertEquals(watches.getSelf(), "https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/watchers");
+        assertEquals(0, watches.getWatchCount());
+        assertEquals("10", watches.getId());
+        assertEquals("https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/watchers", watches.getSelf());
     }
 
     @Test(expected = JiraException.class)
     public void testGetWatchersNullReturned() throws Exception {
-        final RestClient restClient = PowerMockito.mock(RestClient.class);
-        PowerMockito.when(restClient.get(anyString())).thenReturn(null);
+        RestClient restClient = mock(RestClient.class);
+        when(restClient.get(anyString())).thenReturn(null);
         Watches.get(restClient, "someID");
     }
 
     @Test(expected = JiraException.class)
     public void testGetWatchersGetThrows() throws Exception {
-        final RestClient restClient = PowerMockito.mock(RestClient.class);
-        PowerMockito.doThrow(new JiraException("Error")).when(restClient).get(anyString());
-        
+        RestClient restClient = mock(RestClient.class);
+        when(restClient.get(anyString())).thenThrow(new RuntimeException("Error"));
         Watches.get(restClient, "TEST-123");
     }
 
     @Test
     public void testGetWatchers() throws Exception {
-        final RestClient restClient = PowerMockito.mock(RestClient.class);
-        PowerMockito.when(restClient.get(anyString())).thenReturn(getTestJSON());
+        RestClient restClient = mock(RestClient.class);
+        when(restClient.get(anyString())).thenReturn(getTestJSON());
+
         final Watches watches = Watches.get(restClient, "someID");
 
         assertFalse(watches.isWatching());
-        assertEquals(watches.getWatchCount(), 0);
-        assertEquals(watches.getId(), "10");
-        assertEquals(watches.getSelf(), "https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/watchers");
+        assertEquals(0, watches.getWatchCount());
+        assertEquals("10", watches.getId());
+        assertEquals("https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/watchers", watches.getSelf());
     }
 
     @Test
     public void testWatchesToString() {
         Watches watches = new Watches(null, getTestJSON());
-        assertEquals(watches.toString(), "0");
+        assertEquals("0", watches.toString());
     }
 
-    private JSONObject getTestJSON() {
-        JSONObject jsonObject = new JSONObject();
+    private JsonNode getTestJSON() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode node = mapper.createObjectNode();
 
-        jsonObject.put("id", "10");
-        jsonObject.put("self", "https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/watchers");
-        jsonObject.put("watchCount", 0);
-        jsonObject.put("isWatching", false);
-        return jsonObject;
+        node.put("id", "10");
+        node.put("self", "https://brainbubble.atlassian.net/rest/api/2/issue/FILTA-43/watchers");
+        node.put("watchCount", 0);
+        node.put("isWatching", false);
+
+        return node;
     }
+
 }

@@ -17,17 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* Update MMA 2025-05-20: use of Jackson for JSON handling */
+
 package net.rcarz.jiraclient.greenhopper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.rcarz.jiraclient.Field;
-import net.rcarz.jiraclient.Issue;
-import net.rcarz.jiraclient.JiraException;
 import net.rcarz.jiraclient.RestClient;
-
-import java.util.List;
-import java.util.Map;
-
-import net.sf.json.JSONObject;
 
 /**
  * Represents a GreenHopper epic issue.
@@ -44,19 +40,17 @@ public class Epic extends GreenHopperIssue {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected Epic(RestClient restclient, JSONObject json) {
+    protected Epic(RestClient restclient, JsonNode json) {
         super(restclient, json);
 
         if (json != null)
-            deserialise(json);
+            deserialize(json);
     }
 
-    private void deserialise(JSONObject json) {
-        Map map = json;
-
-        epicLabel = Field.getString(map.get("epicLabel"));
-        epicColour = Field.getString(map.get("epicColor"));
-        epicStats = GreenHopperField.getEpicStats(map.get("epicStats"));
+    private void deserialize(JsonNode json) {
+        epicLabel = Field.getString(json.get("epicLabel"));
+        epicColour = Field.getString(json.get("epicColor"));
+        epicStats = GreenHopperField.getEpicStats(json.get("epicStats"));
     }
 
     public String getEpicLabel() {
