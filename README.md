@@ -22,7 +22,20 @@ This document is to be used by the CAST Delivery Specialist or onsite administra
 This document provides installation, deployment and usage instructions for the CAST to Jira Extension.  
 
 ## Release History 
-### CastToJira CLI
+### CLI and Jenkins Plugin (New)
+| Version      | Author          | Description                                                                                                                                                                                                 |
+|--------------|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 2.0.0 (2025) | Matthieu Mabyre | Rewrite with update of all major libraries (json to Jackson, httpclient, jira-rest-client, ...), refactored, improved and fixed all code issues, added distribution module and the related final packaging. |
+| 1.11.0       | Nevin Kaplan    | Updated library package version to remove CVE's                                                                                                                                                             |
+| 1.10.3       | Nevin Kaplan    | * Aligned versions <br>*replace crupt jar file                                                                                                                                                              |
+| 1.10.2       | Nevin Kaplan    | * Converted transaction properties to comma <br> * separated lists <br> * Added debug.workflow property                                                                                                     |
+| 1.10.1       | Nevin Kaplan    | Corrected workflow issue                                                                                                                                                                                    |
+| 1.10.0       | Nevin Kaplan    | * Added workflow properties<br> * various bug fixes                                                                                                                                                         | 
+| 1.9.0        | Nevin Kaplan    | Security Enhancements                                                                                                                                                                                       |
+| 1.8.0        | Nevin Kaplan    | * eliminate third party AIP in favor of the Atlassian supported version<br>* reworked login to accommodate new Atlassian requirements <br>* reworked status transitions to work with SONY's standard workflow |
+
+### Legacy versions
+#### CastToJira CLI
 | Version  | Author | Description |
 | ----- | -------------------- | --------- |
 | 1.0.0 | Fernando Merino | Initial Version |
@@ -30,24 +43,12 @@ This document provides installation, deployment and usage instructions for the C
 | 1.6.0 | Nevin Kaplan | Made compatible with CAST v8.3 |
 | 1.7.0 | Nevin Kaplan | Merged component version history |
 
-### CastToJira Jenkins Plugin
+#### CastToJira Jenkins Plugin
 | Version  | Author | Description |
 | ----- | -------------------- | --------- |
 | 1.0.0 | Fernando Merino | Initial Version |
 | 2.11.0 | Nevin Kaplan | Allowed for more than one application |
 | 1.7.0 | Nevin Kaplan | Merged component version history |
-
-### CLI and Jenkins Plugin (New)
-| Version | Author          | Description                                                                                                                                                                                                   |
-|---------|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1.8.0   | Nevin Kaplan    | * eliminate third party AIP in favor of the Atlassian supported version<br>* reworked login to accommodate new Atlassian requirements <br>* reworked status transitions to work with SONY's standard workflow |
-| 1.9.0   | Nevin Kaplan    | Security Enhancements                                                                                                                                                                                         |
-| 1.10.0  | Nevin Kaplan    | * Added workflow properties<br> * various bug fixes                                                                                                                                                           | 
-| 1.10.1  | Nevin Kaplan    | Corrected workflow issue                                                                                                                                                                                      | 
-| 1.10.2  | Nevin Kaplan    | * Converted transaction properties to comma <br> * separated lists <br> * Added debug.workflow property                                                                                                       | 
-| 1.10.3  | Nevin Kaplan    | * Aligned versions <br>*replace crupt jar file                                                                                                                                                                | 
-| 1.11.0  | Nevin Kaplan    | Updated library package version to remove CVE's                                                                                                                                                               |
-| 2.0.0   | Matthieu Mabyre | Updated all major libraries (json to Jackson, httpclient, jira-rest-client, ...), refactored, improved and fixed all code issues, added distribution module and the related final packaging.                  |                                                                                         |
 
 # Use Cases
 Transfer the CAST Action Plan to Jira to allow easier access by the clients development team.    
