@@ -20,5 +20,6 @@
     <files>
         <file src="cast2jira.zip" />
 		<file src="README.md" />
+		<file src="LICENSE" />
 	</files>
 </package>
