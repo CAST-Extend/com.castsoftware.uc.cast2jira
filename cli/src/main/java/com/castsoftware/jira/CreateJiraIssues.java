@@ -119,6 +119,7 @@ public class CreateJiraIssues {
                 rslt = true;
             }
         } catch (InterruptedException | ExecutionException e) {
+            log.error("Error transitioning issue: " + e.getMessage(), e);
             rslt = false;
         }
         return rslt;
@@ -176,7 +177,7 @@ public class CreateJiraIssues {
                 project = jiraClient.getProjectClient().getProject(pProjectKey).get();
             } catch (ExecutionException e) {
                 throw new JiraException(
-                        String.format("Invalid project short name [%s]", pProjectKey));
+                        String.format("Invalid project short name [%s]. Error: %s", pProjectKey, e.getMessage()), e);
             }
 
             log.info(String.format("Working with Jira project [%s]", project.getName()));
@@ -229,7 +230,7 @@ public class CreateJiraIssues {
                         }
                     }
                 } catch (ExecutionException e) {
-                    throw new JiraException(String.format("Invalid resolution: %s", this.resolutionTxt));
+                    throw new JiraException(String.format("Invalid resolution: %s. Error: %s", this.resolutionTxt, e.getMessage()), e);
                 }
                 if (!validResotion)
                     throw new JiraException(String.format("Invalid resolution: %s", this.resolutionTxt));
@@ -243,7 +244,8 @@ public class CreateJiraIssues {
             log.info(txt);
 
         } catch (URISyntaxException | InterruptedException ex) {
-            throw new JiraException("Unable to establish a connection with Jira", ex);
+            log.error("Connection error: " + ex.getMessage(), ex);
+            throw new JiraException("Unable to establish a connection with Jira: " + ex.getMessage(), ex);
         }
 
         /**
@@ -285,10 +287,12 @@ public class CreateJiraIssues {
                             "project = '%s' AND description ~ '%s' ORDER BY priority DESC",
                             project.getKey(), srchStr)).claim();
 
-                    int totalIssuesFound = searchResult.getTotal();
-                    if (totalIssuesFound > 0) {
-                        for (BasicIssue issue : searchResult.getIssues()) {
-                            Issue is = issueClient.getIssue(issue.getKey()).claim();
+                    // In Jira Cloud, getTotal() is not supported. 
+                    // Track whether we found any matching issues by iterating.
+                    boolean foundExistingIssue = false;
+                    for (Issue issue : searchResult.getIssues()) {
+                        foundExistingIssue = true;
+                        Issue is = issueClient.getIssue(issue.getKey()).claim();
 
                             log.info(String.format("Matching Jira Issue found: %s", is.getKey()));
                             String issueStatusCode = is.getStatus().getName();
@@ -338,7 +342,8 @@ public class CreateJiraIssues {
 
                             this.totalNumOfIssuesNotAddedByExist++;
                         }
-                    } else if (debugWorkflow || !castIssueCorrected) {
+                    
+                    if (!foundExistingIssue && (debugWorkflow || !castIssueCorrected)) {
                         /* Create a new issue. */
 
                         loadConfiguration(config, violation);
@@ -395,7 +400,8 @@ public class CreateJiraIssues {
                 }
             } catch (RestClientException | JiraException | InterruptedException | ExecutionException ex) {
                 this.totalNumOfIssuesNotAddedByError++;
-                log.error(ex.getMessage());
+                log.error("Error processing violation: " + ex.getMessage(), ex);
+                log.error("Exception type: " + ex.getClass().getName());
             }
         }
     }
