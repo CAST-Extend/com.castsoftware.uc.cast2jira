@@ -176,7 +176,7 @@ public class SqlStatements
                 .append(getMetricDescriptionStatement("vil_example", 5)).append(",")
                 .append(getMetricDescriptionStatement("rem_exampel", 6)).append(",")
                 .append(getMetricDescriptionStatement("output", 7)).append(",")
-                .append(getMetricDescriptionStatement("total", 1)).append(",").append(techCriteria)
+                .append(getMetricDescriptionStatement("total", 8)).append(",").append(techCriteria)
                 .append(businessCriteria).append("\nFROM\n")
                 .append(String.format("%s.%s %s,\n", getSchemaProfile(), "viewer_action_plans", "vap"))
                 .append(String.format("%s.%s %s,\n ", getSchemaProfile(), "dss_objects", "dso"))
