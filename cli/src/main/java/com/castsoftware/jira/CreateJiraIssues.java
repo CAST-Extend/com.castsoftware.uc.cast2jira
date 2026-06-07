@@ -519,7 +519,7 @@ public class CreateJiraIssues {
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_VIOLATION_EXAMPLE_DESCRIPTION)) {
                     result.append(temp.getViolationExample());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE)) {
-                    result.append(temp.getSourceCode());
+                    result.append("{code}").append(temp.getSourceCode()).append("{code}");
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_PATH)) {
                     result.append(temp.getSourcePath());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_OBJECT_NAME)) {
