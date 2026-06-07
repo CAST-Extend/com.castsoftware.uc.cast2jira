@@ -2,21 +2,23 @@
 #Actually, the mapping is just allowed to the Jira field create by default. 
 #Cast field labels
 ObjectFullName.label=on Object
-AddedToActionPlanDate.label=*Added to Action Plan Date :*
-ActionDefined.label=*Action Defined by User :*
+ObjectName.label=
+SourcePath.label= in 
+AddedToActionPlanDate.label=*Added to Action Plan Date:*
+ActionDefined.label=*Action Defined by User:*
 MetricShortDescription.label= 
-MetricLongDescription.label=*Description :*
-Reference.label=*Reference :*
-Reason.label=*Reason :*
-Remediation.label=*Remediation :*
-ViolationExample.label=*Violation Example :*
-RemediationExample.label=*Remediation Example :*
-Total.label=*Total :*
-Output.label=*Output :*
-SourceCode.label:h1. Violation Source Code :
-CastId.label=*CastId (Do not Delete or Modified) :*
-TechCriteria.label=*Technical Criteria :* 
-BusinessCriteria.label=*Business Criteria :*
+MetricLongDescription.label=*Description:*
+Reference.label=*Reference:*
+Reason.label=*Reason:*
+Remediation.label=*Remediation:*
+ViolationExample.label=*Violation Example:*
+RemediationExample.label=*Remediation Example:*
+Total.label=*Total:*
+Output.label=*Output:*
+SourceCode.label:h1. Violation Source Code:
+CastId.label=*CastId (Do not Delete or Modified):*
+TechCriteria.label=*Technical Criteria:*
+BusinessCriteria.label=*Business Criteria:*
 
 #customField.names=customfield_10001;customfield_10005
 
@@ -28,6 +30,6 @@ BusinessCriteria.label=*Business Criteria :*
 #customfield_10001.JiraField=BusinessCriteria.label
 
 #Jira fields mapping
-Summary.JiraField=MetricShortDescription.label;ObjectFullName.label
+Summary.JiraField=MetricShortDescription.label;SourcePath.label;ObjectName.label
 Description.JiraField=BusinessCriteria.label;TechCriteria.label;MetricLongDescription.label;Reason.label;Reference.label;Remediation.label;ViolationExample.label;RemediationExample.label;SourceCode.label;Total.label;ActionDefined.label;AddedToActionPlanDate.label;Output.label
 

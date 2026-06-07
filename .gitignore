@@ -23,3 +23,5 @@ jenkins/work/
 
 cast2jira.zip
 .idea
+.vscode/launch.json
+*.log

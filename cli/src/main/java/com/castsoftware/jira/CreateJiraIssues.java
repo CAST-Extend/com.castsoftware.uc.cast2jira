@@ -352,7 +352,12 @@ public class CreateJiraIssues {
                         iib.setProjectKey(project.getKey());
                         iib.setIssueType(issueType);
 
-                        iib.setSummary(getJiraFieldComposition(violation, config, Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION));
+                        String sourcePath = violation.getSourcePath();
+                        String objectName = violation.getObjectName();
+                        String location = sourcePath.endsWith(objectName)
+                                ? sourcePath
+                                : sourcePath + "." + objectName;
+                        iib.setSummary(violation.getMetricShortDescription() + " " + location);
 
                         String description = getJiraFieldComposition(violation, config, Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION) + srchStr;
                         iib.setDescription(description);
@@ -432,6 +437,8 @@ public class CreateJiraIssues {
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_LINE_START);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_LINE_END);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE);
+        loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_SOURCE_PATH);
+        loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_OBJECT_NAME);
     }
 
     /**
@@ -513,6 +520,10 @@ public class CreateJiraIssues {
                     result.append(temp.getViolationExample());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE)) {
                     result.append(temp.getSourceCode());
+                } else if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_PATH)) {
+                    result.append(temp.getSourcePath());
+                } else if (field.equals(Constants.FIELD_MAPPING_LABEL_OBJECT_NAME)) {
+                    result.append(temp.getObjectName());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_TECH_CRITERIA)) {
                     result.append(temp.getTechCriteria());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_BUSINESS_CRITERIA)) {
