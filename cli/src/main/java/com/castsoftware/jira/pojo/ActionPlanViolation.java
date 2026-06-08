@@ -161,7 +161,11 @@ public class ActionPlanViolation {
     int srcStartLine = this.getLineStart();
     int srcEndLine = this.getLineEnd();
     String crlf = System.getProperty("line.separator");
-    String src = getSourceCode();
+    String src = sourceCode;
+
+    if (src == null || src.isEmpty()) {
+      return "";
+    }
 
     // Normalise line endings from DB (PostgreSQL stores \n, Windows expects \r\n)
     src = src.replace("\r\n", "\n").replace("\r", "\n");
@@ -173,6 +177,13 @@ public class ActionPlanViolation {
 
     StringBuilder rslt = new StringBuilder().append("\n");
     String[] lines = src.split("\n");
+    srcStartLine = Math.max(srcStartLine, 1);
+    srcEndLine = Math.min(srcEndLine, lines.length);
+
+    if (srcStartLine > srcEndLine) {
+      return src;
+    }
+
     int cLine = 0;
     for (String ln : lines)
     {
@@ -602,6 +613,10 @@ public class ActionPlanViolation {
 
   public String getSourceCode()
   {
+    if (sourceCode == null) {
+      return "";
+    }
+
     int maxChar = 28672;
     int maxLength = Math.min(sourceCode.length(), maxChar);
     return sourceCode.substring(0, maxLength) + (maxLength == maxChar ? "..." : "");
