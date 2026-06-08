@@ -85,8 +85,8 @@ public class CreateJiraIssues {
         return Lists.newArrayList(trns);
     }
 
-    private Transition nextTransitionId(Issue is, List<String> whiteList, List<String> blackList)
-            throws InterruptedException, ExecutionException, JiraException {
+        private Transition nextTransitionId(Issue is, List<String> whiteList, List<String> blackList)
+            throws InterruptedException, ExecutionException {
         List<Transition> trns = getTransitions(is);
 
         transition : for (Transition t : trns) {
@@ -102,8 +102,9 @@ public class CreateJiraIssues {
             }
         }
 
-        throw new JiraException(String.format("Transition not found: %s %s", whiteList.toString(),
-                is.getStatus().getName()));
+        log.warn(String.format("Transition not found: %s %s. Skipping transition.",
+            whiteList.toString(), is.getStatus().getName()));
+        return null;
     }
 
     private boolean transitionTo(Issue is, Transition toStatus) {
@@ -302,6 +303,10 @@ public class CreateJiraIssues {
                                 Transition transitTo;
                                 while (true) {
                                     transitTo = nextTransitionId(is, transitionDone, transitionBlacklist);
+                                    if (transitTo == null) {
+                                        log.warn("No valid transition to close issue. Skipping close action.");
+                                        break;
+                                    }
                                     if (!transitionTo(is, transitTo)) {
                                         throw new JiraException(String.format("Unable to transition to %s", transitTo.getName()));
                                     }
@@ -323,6 +328,10 @@ public class CreateJiraIssues {
                                 Transition transitTo;
                                 while (true) {
                                     transitTo = nextTransitionId(is, transitionReopen, transitionBlacklist);
+                                    if (transitTo == null) {
+                                        log.warn("No valid transition to reopen issue. Skipping reopen action.");
+                                        break;
+                                    }
                                     if (!transitionTo(is, transitTo)) {
                                         throw new JiraException(String.format("Unable to transition to %s", transitTo.getName()));
                                     }
