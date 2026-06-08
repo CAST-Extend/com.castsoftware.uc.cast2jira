@@ -163,8 +163,16 @@ public class ActionPlanViolation {
     String crlf = System.getProperty("line.separator");
     String src = getSourceCode();
 
+    // Normalise line endings from DB (PostgreSQL stores \n, Windows expects \r\n)
+    src = src.replace("\r\n", "\n").replace("\r", "\n");
+
+    // If no valid line range, return full source
+    if (srcStartLine <= 0 || srcEndLine <= 0) {
+      return src;
+    }
+
     StringBuilder rslt = new StringBuilder().append("\n");
-    String[] lines = src.split(crlf);
+    String[] lines = src.split("\n");
     int cLine = 0;
     for (String ln : lines)
     {
