@@ -501,7 +501,9 @@ public class CreateJiraIssues {
                         noteAdded = true;
                     }
 
-                    if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE)) {
+                    if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE)
+                            || field.equals(Constants.FIELD_MAPPING_LABEL_REMEDIATION_EXAMPLE_DESCRIPTION)
+                            || field.equals(Constants.FIELD_MAPPING_LABEL_VIOLATION_EXAMPLE_DESCRIPTION)) {
                         // Jira h1 headings must be separated from the following {code} macro.
                         result.append(fieldMap.getCastToJiraFieldsMapping(field)).append("\n");
                     } else {
@@ -531,11 +533,11 @@ public class CreateJiraIssues {
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_REMEDIATION_DESCRIPTION)) {
                     result.append(temp.getRemediation());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_REMEDIATION_EXAMPLE_DESCRIPTION)) {
-                    result.append(temp.getRemediationExample());
+                    result.append("{code}").append(temp.getRemediationExample()).append("{code}");
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_TOTAL_DESCRIPTION)) {
                     result.append(temp.getTotals());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_VIOLATION_EXAMPLE_DESCRIPTION)) {
-                    result.append(temp.getViolationExample());
+                    result.append("{code}").append(temp.getViolationExample()).append("{code}");
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE)) {
                     result.append("{code}").append(temp.getSourceCode()).append("{code}");
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_PATH)) {
