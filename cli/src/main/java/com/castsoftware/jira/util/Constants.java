@@ -213,7 +213,7 @@ public class Constants {
 	public static final String FIELD_MAPPING_SUMMARY_JIRA_ORDER_DEFAULT_VALUE = "MetricShortDescription.label";
 
 	/** The Constant FIELD_MAPPING_DESCRIPTION_JIRA_ORDER_DEFAULT_VALUE. */
-	public static final String FIELD_MAPPING_DESCRIPTION_JIRA_ORDER_DEFAULT_VALUE = "SourceCode.label;ObjectFullName.label;AddedToActionPlanDate.label;ActionDefined.label;MetricLongDescription.label;Reason.label;Reference.label;Remediation.label;ViolationExample.label;RemediationExample.label;Total.label";
+	public static final String FIELD_MAPPING_DESCRIPTION_JIRA_ORDER_DEFAULT_VALUE = "Output.label;Total.label;SourceCode.label;ObjectFullName.label;AddedToActionPlanDate.label;ActionDefined.label;MetricLongDescription.label;Reason.label;Reference.label;Remediation.label;ViolationExample.label;RemediationExample.label";
 
 	/** The Constant FIELD_VALUE_WHEN_IS_NULL. */
 	public static final String FIELD_VALUE_WHEN_IS_NULL = "N/A";

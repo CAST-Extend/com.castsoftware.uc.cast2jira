@@ -31,5 +31,5 @@ BusinessCriteria.label=*Business Criteria:*
 
 #Jira fields mapping
 Summary.JiraField=MetricShortDescription.label;SourcePath.label;ObjectName.label
-Description.JiraField=BusinessCriteria.label;TechCriteria.label;MetricLongDescription.label;Reason.label;Reference.label;Remediation.label;ViolationExample.label;RemediationExample.label;SourceCode.label;Total.label;ActionDefined.label;AddedToActionPlanDate.label;Output.label
+Description.JiraField=BusinessCriteria.label;TechCriteria.label;MetricLongDescription.label;Reason.label;Reference.label;Remediation.label;ViolationExample.label;RemediationExample.label;Output.label;Total.label;SourceCode.label;ActionDefined.label;AddedToActionPlanDate.label
 

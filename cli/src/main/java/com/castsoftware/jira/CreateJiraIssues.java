@@ -489,6 +489,10 @@ public class CreateJiraIssues {
              */
             if (fields.contains(field)) {
                 if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION)) {
+                    if (field.equals(Constants.FIELD_MAPPING_LABEL_TOTAL_DESCRIPTION)) {
+                        // Keep Total visually separated from multi-line Output content in Jira rendering.
+                        result.append("\n");
+                    }
                     if (!noteAdded) {
                         // add CAST reference
                         result.append(
@@ -497,7 +501,12 @@ public class CreateJiraIssues {
                         noteAdded = true;
                     }
 
-                    result.append(fieldMap.getCastToJiraFieldsMapping(field)).append(" ");
+                    if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE)) {
+                        // Jira h1 headings must be separated from the following {code} macro.
+                        result.append(fieldMap.getCastToJiraFieldsMapping(field)).append("\n");
+                    } else {
+                        result.append(fieldMap.getCastToJiraFieldsMapping(field)).append(" ");
+                    }
                 }
 
                 /**
