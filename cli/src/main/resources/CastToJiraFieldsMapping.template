@@ -16,7 +16,7 @@ RemediationExample.label=*Remediation Example:*
 Total.label=*Total:*
 Output.label=*Output:*
 SourceCode.label:h1. Violation Source Code:
-CastId.label=*CastId (Do not Delete or Modified):*
+CastId.label=*CastId (Do not delete or modify):*
 TechCriteria.label=*Technical Criteria:*
 BusinessCriteria.label=*Business Criteria:*
 
