@@ -26,3 +26,5 @@ cast2jira.zip
 .vscode/launch.json
 .vscode/settings.json
 *.log
+/.github/copilot-instructions.md
+/.vscode/mcp.json
