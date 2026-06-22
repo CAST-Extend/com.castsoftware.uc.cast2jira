@@ -138,10 +138,13 @@ public class SendToJira {
 			new HelpFormatter().printHelp(SendToJira.class.getCanonicalName(), options);
 			System.exit(returnValue);
         } catch (JiraException e) {
-            log.error(String.format("Fatal Error: %s",e.getMessage()));
+            log.error(String.format("Fatal Error: %s",e.getMessage()), e);
             System.exit(returnValue);
 		} catch (Exception e) {
-			log.error("Fatal error, please review the log for more information");
+			log.error("Fatal error, please review the log for more information", e);
+			log.error("Exception type: " + e.getClass().getName());
+			log.error("Exception message: " + e.getMessage());
+			e.printStackTrace();
 			System.exit(returnValue);
 		}
 
@@ -196,11 +199,19 @@ public class SendToJira {
 		options.addOption(
 				Constants.JIRA_USER_NAME,
 				true,
-				"Jira User Name to login using REST AIP. All the violations included in the action plan will be assigned to this user");
+				"Jira User Name to login using REST API. "
+						+ "For Jira Cloud (SAAS): Use your email address (e.g., user@company.com). "
+						+ "For Jira Server/Data Center (on-prem): Use your username. "
+						+ "All violations in the action plan will be assigned to this user");
 		options.addOption(Constants.JIRA_USER_PASSWORD, true,
-				"Jira User password to login using REST AIP ");
+				"Jira User authentication credential. "
+						+ "For Jira Cloud (SAAS): Use an API Token (NOT your password). "
+						+ "Generate one at: https://id.atlassian.com/manage-profile/security/api-tokens. "
+						+ "For Jira Server/Data Center (on-prem): Use your password");
 		options.addOption(Constants.JIRA_REST_API_URL, true,
-				"URL to Jira REST AIP");
+				"URL to Jira REST API. "
+						+ "For Jira Cloud (SAAS): https://your-domain.atlassian.net "
+						+ "For Jira Server/Data Center (on-prem): http://jira.yourcompany.com or https://jira.yourcompany.com");
 		options.addOption(
 				Constants.JIRA_PROJECT_NAME,
 				true,
@@ -268,8 +279,15 @@ public class SendToJira {
 		options.addOption(
 				Constants.ZEXAMPLES,
 				false,
-				"This option shows command line execution examples.The following examples take in account that lib folder is located in the same folder of CastJiraConnector.jar."
-						+ "It means if CastJiraConnector.jar is located in c:\\temp\\CastJiraConnector the lib folder will be placed at c:\\temp\\CastJiraConnector\\lib"
+				"This option shows command line execution examples. The following examples take in account that lib folder is located in the same folder of CastJiraConnector.jar."
+						+ "\nIt means if CastJiraConnector.jar is located in c:\\temp\\CastJiraConnector the lib folder will be placed at c:\\temp\\CastJiraConnector\\lib"
+						+ "\n"
+						+ "\n=== JIRA CLOUD (SAAS) EXAMPLE ==="
+						+ "\njava -cp 'C:\\temp\\CastjiraConnector\\CastJiraConnector_lib\\*.jar' -jar CastJiraConnector.jar -applicationname MyTelco -castusername operator -castuserpassword CastAIP -databaseprovider CSS -databasehost localhost -databasename postgres -databaseport 2278 -databaseschema demo_central -jirarestapiurl https://mycompany.atlassian.net -jiraprojectname CONN -jirausername user@mycompany.com -jirauserpassword ATATTxxxxxxxxxxxxxxxxxx -logpath c:\\temp -debug"
+						+ "\nNOTE: For Jira Cloud, -jirausername must be an EMAIL and -jirauserpassword must be an API TOKEN (not password)"
+						+ "\nGenerate API tokens at: https://id.atlassian.com/manage-profile/security/api-tokens"
+						+ "\n"
+						+ "\n=== JIRA SERVER/DATA CENTER (ON-PREM) EXAMPLES ==="
 						+ "\nExample with debug option activated and assigning issues to other user different to the user used to logging in Jira"
 						+ "\njava -cp 'C:\\temp\\CastjiraConnector\\CastJiraConnector_lib\\*.jar' -jar CastJiraConnector.jar -applicationname MyTelco -castusername operator -castuserpassword CastAIP -databaseprovider CSS -databasehost localhost -databasename postgres -databaseport 2278 -databaseschema demo_central -jirarestapiurl http://localhost:8082/ -jiraprojectname CONN -jirausername fme -jirauserpassword 3203@ndromed@  -jiraassignee HLR -logpath c:\\temp -debug"
 						+ "\nExample without debug option activated and assigning issues to the same user used to loggin in Jira"

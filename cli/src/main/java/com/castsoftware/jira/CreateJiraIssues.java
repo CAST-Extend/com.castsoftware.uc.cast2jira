@@ -85,8 +85,8 @@ public class CreateJiraIssues {
         return Lists.newArrayList(trns);
     }
 
-    private Transition nextTransitionId(Issue is, List<String> whiteList, List<String> blackList)
-            throws InterruptedException, ExecutionException, JiraException {
+        private Transition nextTransitionId(Issue is, List<String> whiteList, List<String> blackList)
+            throws InterruptedException, ExecutionException {
         List<Transition> trns = getTransitions(is);
 
         transition : for (Transition t : trns) {
@@ -102,8 +102,9 @@ public class CreateJiraIssues {
             }
         }
 
-        throw new JiraException(String.format("Transition not found: %s %s", whiteList.toString(),
-                is.getStatus().getName()));
+        log.warn(String.format("Transition not found: %s %s. Skipping transition.",
+            whiteList.toString(), is.getStatus().getName()));
+        return null;
     }
 
     private boolean transitionTo(Issue is, Transition toStatus) {
@@ -119,6 +120,7 @@ public class CreateJiraIssues {
                 rslt = true;
             }
         } catch (InterruptedException | ExecutionException e) {
+            log.error("Error transitioning issue: " + e.getMessage(), e);
             rslt = false;
         }
         return rslt;
@@ -176,7 +178,7 @@ public class CreateJiraIssues {
                 project = jiraClient.getProjectClient().getProject(pProjectKey).get();
             } catch (ExecutionException e) {
                 throw new JiraException(
-                        String.format("Invalid project short name [%s]", pProjectKey));
+                        String.format("Invalid project short name [%s]. Error: %s", pProjectKey, e.getMessage()), e);
             }
 
             log.info(String.format("Working with Jira project [%s]", project.getName()));
@@ -229,7 +231,7 @@ public class CreateJiraIssues {
                         }
                     }
                 } catch (ExecutionException e) {
-                    throw new JiraException(String.format("Invalid resolution: %s", this.resolutionTxt));
+                    throw new JiraException(String.format("Invalid resolution: %s. Error: %s", this.resolutionTxt, e.getMessage()), e);
                 }
                 if (!validResotion)
                     throw new JiraException(String.format("Invalid resolution: %s", this.resolutionTxt));
@@ -243,7 +245,8 @@ public class CreateJiraIssues {
             log.info(txt);
 
         } catch (URISyntaxException | InterruptedException ex) {
-            throw new JiraException("Unable to establish a connection with Jira", ex);
+            log.error("Connection error: " + ex.getMessage(), ex);
+            throw new JiraException("Unable to establish a connection with Jira: " + ex.getMessage(), ex);
         }
 
         /**
@@ -285,10 +288,12 @@ public class CreateJiraIssues {
                             "project = '%s' AND description ~ '%s' ORDER BY priority DESC",
                             project.getKey(), srchStr)).claim();
 
-                    int totalIssuesFound = searchResult.getTotal();
-                    if (totalIssuesFound > 0) {
-                        for (BasicIssue issue : searchResult.getIssues()) {
-                            Issue is = issueClient.getIssue(issue.getKey()).claim();
+                    // In Jira Cloud, getTotal() is not supported. 
+                    // Track whether we found any matching issues by iterating.
+                    boolean foundExistingIssue = false;
+                    for (Issue issue : searchResult.getIssues()) {
+                        foundExistingIssue = true;
+                        Issue is = issueClient.getIssue(issue.getKey()).claim();
 
                             log.info(String.format("Matching Jira Issue found: %s", is.getKey()));
                             String issueStatusCode = is.getStatus().getName();
@@ -298,6 +303,10 @@ public class CreateJiraIssues {
                                 Transition transitTo;
                                 while (true) {
                                     transitTo = nextTransitionId(is, transitionDone, transitionBlacklist);
+                                    if (transitTo == null) {
+                                        log.warn("No valid transition to close issue. Skipping close action.");
+                                        break;
+                                    }
                                     if (!transitionTo(is, transitTo)) {
                                         throw new JiraException(String.format("Unable to transition to %s", transitTo.getName()));
                                     }
@@ -319,6 +328,10 @@ public class CreateJiraIssues {
                                 Transition transitTo;
                                 while (true) {
                                     transitTo = nextTransitionId(is, transitionReopen, transitionBlacklist);
+                                    if (transitTo == null) {
+                                        log.warn("No valid transition to reopen issue. Skipping reopen action.");
+                                        break;
+                                    }
                                     if (!transitionTo(is, transitTo)) {
                                         throw new JiraException(String.format("Unable to transition to %s", transitTo.getName()));
                                     }
@@ -338,7 +351,8 @@ public class CreateJiraIssues {
 
                             this.totalNumOfIssuesNotAddedByExist++;
                         }
-                    } else if (debugWorkflow || !castIssueCorrected) {
+                    
+                    if (!foundExistingIssue && (debugWorkflow || !castIssueCorrected)) {
                         /* Create a new issue. */
 
                         loadConfiguration(config, violation);
@@ -347,7 +361,12 @@ public class CreateJiraIssues {
                         iib.setProjectKey(project.getKey());
                         iib.setIssueType(issueType);
 
-                        iib.setSummary(getJiraFieldComposition(violation, config, Constants.FIELD_MAPPING_LABEL_SUMMARY_JIRA_DESCRIPTION));
+                        String sourcePath = violation.getSourcePath();
+                        String objectName = violation.getObjectName();
+                        String location = sourcePath.endsWith(objectName)
+                                ? sourcePath
+                                : sourcePath + "." + objectName;
+                        iib.setSummary(violation.getMetricShortDescription() + " - [" + location + "]");
 
                         String description = getJiraFieldComposition(violation, config, Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION) + srchStr;
                         iib.setDescription(description);
@@ -395,7 +414,8 @@ public class CreateJiraIssues {
                 }
             } catch (RestClientException | JiraException | InterruptedException | ExecutionException ex) {
                 this.totalNumOfIssuesNotAddedByError++;
-                log.error(ex.getMessage());
+                log.error("Error processing violation: " + ex.getMessage(), ex);
+                log.error("Exception type: " + ex.getClass().getName());
             }
         }
     }
@@ -426,6 +446,8 @@ public class CreateJiraIssues {
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_LINE_START);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_LINE_END);
         loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE);
+        loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_SOURCE_PATH);
+        loadConfig.getCastToJiraFieldsMapping(Constants.FIELD_MAPPING_LABEL_OBJECT_NAME);
     }
 
     /**
@@ -467,15 +489,26 @@ public class CreateJiraIssues {
              */
             if (fields.contains(field)) {
                 if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION)) {
+                    if (field.equals(Constants.FIELD_MAPPING_LABEL_TOTAL_DESCRIPTION)) {
+                        // Keep Total visually separated from multi-line Output content in Jira rendering.
+                        result.append("\n");
+                    }
                     if (!noteAdded) {
                         // add CAST reference
                         result.append(
-                                "*NOTE: This defect was generated by CAST Analytics and approved by for correction. If you need further information on this defect, login to the CAST engineering dashboard for ")
-                                .append(this.appName).append("*\n\n");
+                                "*NOTE: This defect was generated by CAST Analytics and approved for correction. For more information about this defect, please log in to the CAST Engineering Dashboard.")
+                                .append("*\n\n");
                         noteAdded = true;
                     }
 
-                    result.append(fieldMap.getCastToJiraFieldsMapping(field)).append(" ");
+                    if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE)
+                            || field.equals(Constants.FIELD_MAPPING_LABEL_REMEDIATION_EXAMPLE_DESCRIPTION)
+                            || field.equals(Constants.FIELD_MAPPING_LABEL_VIOLATION_EXAMPLE_DESCRIPTION)) {
+                        // Jira h1 headings must be separated from the following {code} macro.
+                        result.append(fieldMap.getCastToJiraFieldsMapping(field)).append("\n");
+                    } else {
+                        result.append(fieldMap.getCastToJiraFieldsMapping(field)).append(" ");
+                    }
                 }
 
                 /**
@@ -500,13 +533,17 @@ public class CreateJiraIssues {
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_REMEDIATION_DESCRIPTION)) {
                     result.append(temp.getRemediation());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_REMEDIATION_EXAMPLE_DESCRIPTION)) {
-                    result.append(temp.getRemediationExample());
+                    result.append("{code}").append(temp.getRemediationExample()).append("{code}");
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_TOTAL_DESCRIPTION)) {
                     result.append(temp.getTotals());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_VIOLATION_EXAMPLE_DESCRIPTION)) {
-                    result.append(temp.getViolationExample());
+                    result.append("{code}").append(temp.getViolationExample()).append("{code}");
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_CODE)) {
-                    result.append(temp.getSourceCode());
+                    result.append("{code}").append(temp.getSourceCode()).append("{code}");
+                } else if (field.equals(Constants.FIELD_MAPPING_LABEL_SOURCE_PATH)) {
+                    result.append(temp.getSourcePath());
+                } else if (field.equals(Constants.FIELD_MAPPING_LABEL_OBJECT_NAME)) {
+                    result.append(temp.getObjectName());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_TECH_CRITERIA)) {
                     result.append(temp.getTechCriteria());
                 } else if (field.equals(Constants.FIELD_MAPPING_LABEL_BUSINESS_CRITERIA)) {
