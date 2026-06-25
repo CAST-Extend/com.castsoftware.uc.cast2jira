@@ -34,13 +34,16 @@
  
   
 	<f:section title="Jira Connection Setup">
-	   	<f:entry title="Root URL to Jira REST API:" field="jiraRestApiUrl">
+	   	<f:entry title="Root URL to Jira REST API:" field="jiraRestApiUrl"
+	   	        help="Base URL of your Jira instance only. For Jira Cloud: https://your-domain.atlassian.net — do NOT include board, project or issue paths.">
 	  		<f:textbox />
 		</f:entry>
-   	 	<f:entry title="Jira User:" field="jiraUser">
+   	 	<f:entry title="Jira User:" field="jiraUser"
+   	 	        help="Jira username. For Jira Cloud (SaaS) use the account email address.">
 	  		<f:textbox />
 		</f:entry>
-		<f:entry title="Jira User Password:" field="jiraUserPassword">
+		<f:entry title="Jira User Password:" field="jiraUserPassword"
+		        help="Jira password. For Jira Cloud (SaaS) you must use an API token instead of your account password. Generate one at https://id.atlassian.com/manage-profile/security/api-tokens">
 	  		<f:password />
 		</f:entry>
 		  			<f:validateButton title="Test Jira Connection" progress="Testing..." method="testJiraConnection" with="jiraRestApiUrl,jiraUser,jiraUserPassword"/>		
