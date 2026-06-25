@@ -23,3 +23,7 @@ jenkins/work/
 
 cast2jira.zip
 .idea
+/.github/copilot-instructions.md
+/.vscode/mcp.json
+/cli/.settings/org.eclipse.jdt.apt.core.prefs
+/.vscode/settings.json
