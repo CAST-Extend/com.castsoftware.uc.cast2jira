@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -652,6 +653,11 @@ public class CastJiraConnectorBuilder extends Builder // implements
 
             Iterable<BasicProject> projects;
             try {
+                FormValidation urlValidation = validateJiraRestApiRootUrl(jiraRestApiUrl);
+                if (urlValidation.kind != FormValidation.Kind.OK) {
+                    return urlValidation;
+                }
+
                 log.info(String.format("User: %s URL: %s", jiraUser, jiraRestApiUrl));
 
                 jiraClient = getJiraClient(jiraRestApiUrl, jiraUser, jiraUserPassword, true);
@@ -789,29 +795,62 @@ public class CastJiraConnectorBuilder extends Builder // implements
 
         public FormValidation doCheckJiraRestApiUrl(@QueryParameter String value)
                 throws IOException, ServletException {
-            boolean isWarning = false;
-            boolean isError = false;
-            String msg = "";
+            FormValidation rootValidation = validateJiraRestApiRootUrl(value);
+            if (rootValidation.kind != FormValidation.Kind.OK) {
+                return rootValidation;
+            }
+
             try {
                 URL url = new URL(value);
                 URLConnection conn = url.openConnection();
                 conn.connect();
-            } catch (MalformedURLException | IllegalArgumentException e) {
-                msg = "URL syntax not valid. Please set a valid URL";
-                isError = true;
             } catch (IOException e) {
-                msg = "Please set URL to a valid Jira REST AIP";
-                isWarning = true;
-            } catch (Exception e) {
-                e.printStackTrace();
+                return FormValidation.warning("URL looks valid but Jira could not be reached from Jenkins right now");
             }
 
-            if (isError)
-                return FormValidation.error(msg);
-            else if (isWarning)
-                return FormValidation.warning(msg);
-            else
-                return FormValidation.ok();
+            return FormValidation.ok();
+        }
+
+        private FormValidation validateJiraRestApiRootUrl(String value) {
+            if (value == null || value.trim().isEmpty()) {
+                return FormValidation.error("Please set the Jira REST API root URL. It is mandatory.");
+            }
+
+            URL url;
+            try {
+                url = new URL(value);
+            } catch (MalformedURLException | IllegalArgumentException e) {
+                return FormValidation.error("URL syntax not valid. Please set a valid URL");
+            }
+
+            String protocol = url.getProtocol();
+            if (!"http".equalsIgnoreCase(protocol) && !"https".equalsIgnoreCase(protocol)) {
+                return FormValidation.error("Please use an http or https URL");
+            }
+
+            String host = url.getHost();
+            if (host == null || host.trim().isEmpty()) {
+                return FormValidation.error("Host is missing in Jira URL");
+            }
+
+            String path = url.getPath();
+            if (path != null && !path.isEmpty() && !"/".equals(path)) {
+                String normalizedPath = path.toLowerCase(Locale.ROOT);
+                if (normalizedPath.contains("/boards/")
+                        || normalizedPath.contains("/projects/")
+                        || normalizedPath.contains("/browse/")
+                        || normalizedPath.contains("/issues/")) {
+                    return FormValidation.error(
+                            "This looks like a Jira page URL (board/project/issue). Please use Jira base URL only, for example https://your-domain.atlassian.net");
+                }
+
+                if (!("/jira".equals(normalizedPath) || "/jira/".equals(normalizedPath))) {
+                    return FormValidation.warning(
+                            "Use Jira base URL if possible. Current path may not be a root URL.");
+                }
+            }
+
+            return FormValidation.ok();
         }
 
         public FormValidation doCheckJiraUser(@QueryParameter String value)
