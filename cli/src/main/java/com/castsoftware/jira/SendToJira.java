@@ -107,7 +107,8 @@ public class SendToJira {
 						}
 					}
 
-					CreateJiraIssues createJiraIssues = new CreateJiraIssues(
+String castApplicationName = line.getOptionValue(Constants.CAST_APPLICATION_NAME);
+						CreateJiraIssues createJiraIssues = new CreateJiraIssues(
 							line.getOptionValue(Constants.JIRA_USER_NAME),
 							line.getOptionValue(Constants.JIRA_USER_PASSWORD),
 							line.getOptionValue(Constants.JIRA_REST_API_URL),
@@ -116,6 +117,7 @@ public class SendToJira {
 							markIssueResolved,
 							resolutionTxt,
 							line.getOptionValue(Constants.COMPONENT),
+							castApplicationName,
 							map
 					);
 
@@ -134,21 +136,21 @@ public class SendToJira {
 			}
 		} catch (ParseException exp) {
 			// Something went wrong
-			log.error("ParseException Error: " + exp.getMessage());
+			log.error("ParseException Error: " + exp.getMessage(), exp);
 			new HelpFormatter().printHelp(SendToJira.class.getCanonicalName(), options);
+			returnValue = 1;
 			System.exit(returnValue);
         } catch (JiraException e) {
-            log.error(String.format("Fatal Error: %s",e.getMessage()));
+            log.error(String.format("Fatal Error: %s", e.getMessage()), e);
+            returnValue = 1;
             System.exit(returnValue);
-		} catch (Exception e) {
-			log.error("Fatal error, please review the log for more information");
-			System.exit(returnValue);
-		}
-
-		System.exit(returnValue);
-	}
-
-	/**
+        } catch (Exception e) {
+            log.error("Fatal error, please review the log for more information", e);
+            returnValue = 1;
+            System.exit(returnValue);
+        }
+    }
+    /**
 	 * Creates the options.
 	 * 
 	 * @return the options

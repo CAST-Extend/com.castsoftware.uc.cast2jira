@@ -19,6 +19,7 @@ import com.atlassian.jira.rest.client.api.domain.Comment;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
 import com.atlassian.jira.rest.client.api.domain.Project;
+import com.atlassian.jira.rest.client.api.domain.Priority;
 import com.atlassian.jira.rest.client.api.domain.Resolution;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.api.domain.Transition;
@@ -83,6 +84,25 @@ public class CreateJiraIssues {
         Iterable<Transition> trns = issueClient.getTransitions(is).get();
 
         return Lists.newArrayList(trns);
+    }
+
+    private Long getPriorityId(String jiraPriorityName) {
+        if (jiraPriorityName == null || jiraPriorityName.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            Iterable<Priority> priorities = jiraClient.getMetadataClient().getPriorities().get();
+            for (Priority p : priorities) {
+                if (jiraPriorityName.equalsIgnoreCase(p.getName())) {
+                    return p.getId();
+                }
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            log.warn(String.format("Unable to resolve Jira priority id for '%s'", jiraPriorityName), e);
+            Thread.currentThread().interrupt();
+        }
+        return null;
     }
 
     private Transition nextTransitionId(Issue is, List<String> whiteList, List<String> blackList)
@@ -166,7 +186,7 @@ public class CreateJiraIssues {
      */
     public CreateJiraIssues(String jiraUserName, String jiraUserPassword, String jiraRestApiUrl,
             String pProjectKey, String pIssueType, boolean markIssueResolved, String resolutionTxt,
-            String pComponent, HashMap<Integer, ActionPlanViolation> pViolationList)
+            String pComponent, String pCastApplicationName, HashMap<Integer, ActionPlanViolation> pViolationList)
             throws JiraException {
 
         try {
@@ -204,7 +224,7 @@ public class CreateJiraIssues {
                 if (component == null) {
                     throw new JiraException(
                             String.format("Component [%s] does not exist in project [%s]",
-                                    project.getName(), pIssueType));
+                                    pComponent, project.getName()));
                 } else {
                     log.info(String.format("Working with component [%s]", component.getName()));
                 }
@@ -214,6 +234,7 @@ public class CreateJiraIssues {
 
             this.markIssueResolved = markIssueResolved;
             this.resolutionTxt = resolutionTxt;
+            this.appName = pCastApplicationName;
 
             String txt = "When Identified as fixed by CAST, the Jira issue will be ";
             if (markIssueResolved) {
@@ -244,6 +265,8 @@ public class CreateJiraIssues {
 
         } catch (URISyntaxException | InterruptedException ex) {
             throw new JiraException("Unable to establish a connection with Jira", ex);
+        } catch (RuntimeException ex) {
+            throw new JiraException("Unexpected runtime error during Jira issue initialization", ex);
         }
 
         /**
@@ -285,7 +308,13 @@ public class CreateJiraIssues {
                             "project = '%s' AND description ~ '%s' ORDER BY priority DESC",
                             project.getKey(), srchStr)).claim();
 
-                    int totalIssuesFound = searchResult.getTotal();
+                    int totalIssuesFound;
+                    try {
+                        totalIssuesFound = searchResult.getTotal();
+                    } catch (UnsupportedOperationException e) {
+                        // Jira Cloud doesn't support getTotal(), fall back to checking issue count
+                        totalIssuesFound = Lists.newArrayList(searchResult.getIssues()).size();
+                    }
                     if (totalIssuesFound > 0) {
                         for (BasicIssue issue : searchResult.getIssues()) {
                             Issue is = issueClient.getIssue(issue.getKey()).claim();
@@ -352,7 +381,13 @@ public class CreateJiraIssues {
                         String description = getJiraFieldComposition(violation, config, Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION) + srchStr;
                         iib.setDescription(description);
 
-                        iib.setPriorityId((long) priority);
+                        String jiraPriorityName = config.getPriorityMappingConversion(String.valueOf(priority));
+                        Long jiraPriorityId = getPriorityId(jiraPriorityName);
+                        if (jiraPriorityId != null) {
+                            iib.setPriorityId(jiraPriorityId);
+                        } else {
+                            log.warn(String.format("Jira priority '%s' not found for CAST priority %d. Issue will be created without explicit priority.", jiraPriorityName, priority));
+                        }
 
                         if (component != null) {
                             iib.setComponents(component);
@@ -395,7 +430,10 @@ public class CreateJiraIssues {
                 }
             } catch (RestClientException | JiraException | InterruptedException | ExecutionException ex) {
                 this.totalNumOfIssuesNotAddedByError++;
-                log.error(ex.getMessage());
+                log.error(String.format("Error processing violation %d: %s", key, ex.getMessage()), ex);
+            } catch (RuntimeException ex) {
+                this.totalNumOfIssuesNotAddedByError++;
+                log.error(String.format("Error processing violation %d: %s", key, ex.getMessage()), ex);
             }
         }
     }
@@ -469,9 +507,10 @@ public class CreateJiraIssues {
                 if (fieldType.equals(Constants.FIELD_MAPPING_LABEL_DESCRIPTION_JIRA_DESCRIPTION)) {
                     if (!noteAdded) {
                         // add CAST reference
+                        String appRef = this.appName == null ? "" : this.appName;
                         result.append(
                                 "*NOTE: This defect was generated by CAST Analytics and approved by for correction. If you need further information on this defect, login to the CAST engineering dashboard for ")
-                                .append(this.appName).append("*\n\n");
+                                .append(appRef).append("*\n\n");
                         noteAdded = true;
                     }
 

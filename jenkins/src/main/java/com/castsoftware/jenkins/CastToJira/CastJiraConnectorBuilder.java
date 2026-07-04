@@ -160,7 +160,13 @@ public class CastJiraConnectorBuilder extends Builder // implements
             listener.getLogger().println("Extraction location is empty");
             return false;
         }
-        extractorLocation = new File(extractorLocation + "/CastToJira.jar").toString();
+        // Normalize separators: paths configured on Windows use backslashes which the
+        // Linux shell interprets as escape characters, producing a garbled path.
+        String normalizedLoc = extractorLocation.trim().replace('\\', '/');
+        if (normalizedLoc.endsWith("/")) {
+            normalizedLoc = normalizedLoc.substring(0, normalizedLoc.length() - 1);
+        }
+        extractorLocation = normalizedLoc + "/CastToJira.jar";
 
         String castUserName = this.getCastUserName();
         String castUserPassword = this.getCastUserPassword();
@@ -192,7 +198,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
         if (isUnix()) {
             listener.getLogger().println("Executing Unix Shell");
             Shell shell = new Shell(command);
-            shell.perform(build, launcher, listener);
+            rslt = shell.perform(build, launcher, listener);
 
         } else if (isWindows()) {
             listener.getLogger().println("Executing Windows Batch");
@@ -233,8 +239,11 @@ public class CastJiraConnectorBuilder extends Builder // implements
         logger.println(getLogDateTime() + "- " + "Getting Action Plan...");
 
         String jiraUtilLoc = getDescriptor().getJiraExportLoc();
-        if (jiraUtilLoc == null) {
-            logger.println("ERROR: Jira Export Utility Location is not configured");
+        if (jiraUtilLoc == null || jiraUtilLoc.trim().isEmpty()) {
+            logger.println("ERROR: Jira Export Utility Location is not configured. "
+                    + "Go to Jenkins > Manage Jenkins > Configure System > "
+                    + "\"CAST Action Plan to Jira Setup\" and set the path to the directory "
+                    + "containing CastToJira.jar.");
             return false;
         }
 
@@ -651,23 +660,31 @@ public class CastJiraConnectorBuilder extends Builder // implements
 
             log.info("Jira Login Validation");
 
-            Iterable<BasicProject> projects;
             try {
                 FormValidation urlValidation = validateJiraRestApiRootUrl(jiraRestApiUrl);
-                if (urlValidation.kind != FormValidation.Kind.OK) {
+                if (urlValidation.kind == FormValidation.Kind.ERROR) {
                     return urlValidation;
                 }
 
-                log.info(String.format("User: %s URL: %s", jiraUser, jiraRestApiUrl));
+                String normalizedUrl = normalizeJiraRestApiRootUrl(jiraRestApiUrl);
+                log.info(String.format("User: %s URL: %s", jiraUser, normalizedUrl));
 
-                jiraClient = getJiraClient(jiraRestApiUrl, jiraUser, jiraUserPassword, true);
+                boolean isCloud = normalizedUrl.toLowerCase(Locale.ROOT).contains("atlassian.net");
+                if (isCloud) {
+                    log.info("Jira Cloud instance detected - API token required for REST API authentication");
+                }
 
-                projects = jiraClient.getProjectClient().getAllProjects().get();
-                
-                if (projects != null && projects.iterator().hasNext()) 
+                jiraClient = getJiraClient(normalizedUrl, jiraUser, jiraUserPassword, true);
+                // Do NOT call getSessionClient().getCurrentSession() — Jira Cloud removed
+                // cookie-based sessions; that endpoint returns 404/403 on atlassian.net.
+                // Validating by listing projects is sufficient and works on both Server and Cloud.
+                Iterable<BasicProject> projects = jiraClient.getProjectClient().getAllProjects().get();
+                if (projects != null && projects.iterator().hasNext()) {
                     return FormValidation.ok("Jira connection OK");
-                else 
-                    return FormValidation.error("Invalid username or password");
+                }
+                return FormValidation.warning(
+                        "Connected to Jira successfully, but no projects are visible to this user. "
+                                + "Verify that the Jira account has access to at least one project.");
             } catch (URISyntaxException ex) {
                 log.info(ex.getMessage());
                 return FormValidation.error("Unable to access Jira API");
@@ -678,9 +695,24 @@ public class CastJiraConnectorBuilder extends Builder // implements
                     cause = cause.getCause();
                 }
                 String message = cause.getMessage();
+                if (jiraRestApiUrl != null && jiraRestApiUrl.toLowerCase(Locale.ROOT).contains("atlassian.net")) {
+                    message = "Authentication failed. For Jira Cloud (atlassian.net), the 'Jira User Password' field must contain an API token, not your Atlassian account password. "
+                            + "Generate one at: https://id.atlassian.com/manage-profile/security/api-tokens";
+                }
                 return FormValidation.error(message);
-            } catch (IllegalArgumentException | InterruptedException | ExecutionException ex) {
+            } catch (ExecutionException ex) {
+                log.info(ex.getMessage());
+                if (jiraRestApiUrl != null && jiraRestApiUrl.toLowerCase(Locale.ROOT).contains("atlassian.net")) {
+                    return FormValidation.error(
+                            "Authentication failed. For Jira Cloud (atlassian.net), the 'Jira User Password' field must contain an API token, not your Atlassian account password. "
+                                    + "Generate one at: https://id.atlassian.com/manage-profile/security/api-tokens");
+                }
                 return FormValidation.error(ex.getMessage());
+            } catch (IllegalArgumentException | InterruptedException ex) {
+                return FormValidation.error(ex.getMessage());
+            } catch (MalformedURLException ex) {
+                log.info(ex.getMessage());
+                return FormValidation.error("Unable to normalize Jira API URL");
             }
         }
 
@@ -801,7 +833,7 @@ public class CastJiraConnectorBuilder extends Builder // implements
             }
 
             try {
-                URL url = new URL(value);
+                URL url = new URL(normalizeJiraRestApiRootUrl(value));
                 URLConnection conn = url.openConnection();
                 conn.connect();
             } catch (IOException e) {
@@ -809,6 +841,33 @@ public class CastJiraConnectorBuilder extends Builder // implements
             }
 
             return FormValidation.ok();
+        }
+
+        private String normalizeJiraRestApiRootUrl(String value) throws MalformedURLException {
+            if (value == null) {
+                return null;
+            }
+            URL url = new URL(value.trim());
+            String path = url.getPath();
+            if (path == null || path.isEmpty() || "/".equals(path)) {
+                return stripTrailingSlash(url.toString());
+            }
+
+            String normalizedPath = path.toLowerCase(Locale.ROOT);
+            if (normalizedPath.startsWith("/jira")) {
+                return buildRootUrl(url.getProtocol(), url.getHost(), url.getPort(), "/jira");
+            }
+            return buildRootUrl(url.getProtocol(), url.getHost(), url.getPort(), "/");
+        }
+
+        private String buildRootUrl(String protocol, String host, int port, String path) throws MalformedURLException {
+            URL normalized = new URL(protocol, host, port, path);
+            String result = normalized.toString();
+            return result.endsWith("/") ? result.substring(0, result.length() - 1) : result;
+        }
+
+        private String stripTrailingSlash(String url) {
+            return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
         }
 
         private FormValidation validateJiraRestApiRootUrl(String value) {
@@ -840,8 +899,15 @@ public class CastJiraConnectorBuilder extends Builder // implements
                         || normalizedPath.contains("/projects/")
                         || normalizedPath.contains("/browse/")
                         || normalizedPath.contains("/issues/")) {
-                    return FormValidation.error(
-                            "This looks like a Jira page URL (board/project/issue). Please use Jira base URL only, for example https://your-domain.atlassian.net");
+                    String normalizedUrl;
+                    try {
+                        normalizedUrl = normalizeJiraRestApiRootUrl(value);
+                    } catch (MalformedURLException e) {
+                        return FormValidation.error("Unable to normalize Jira URL");
+                    }
+                    return FormValidation.warning(
+                            "Detected a Jira page URL. Using Jira root URL " + normalizedUrl
+                                    + " automatically. For Jira Cloud, use https://your-domain.atlassian.net");
                 }
 
                 if (!("/jira".equals(normalizedPath) || "/jira/".equals(normalizedPath))) {

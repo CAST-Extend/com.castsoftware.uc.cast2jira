@@ -13,7 +13,8 @@
     so it should be straightforward to find them.
   -->  
 	<f:section title="CAST Action Plan to Jira Setup">
-		<f:entry title="Jira Export Utility Location" field="jiraExportLoc">
+		<f:entry title="Jira Export Utility Location" field="jiraExportLoc"
+		         help="Full path to the directory containing CastToJira.jar ON THE JENKINS SERVER (not your local machine). Use forward slashes even on Windows (e.g. C:/tools/cast2jira). The file CastToJira.jar must exist at this location on the server where Jenkins runs.">
 		  <f:textbox />
 		</f:entry>
 		
