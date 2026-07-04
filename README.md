@@ -3,6 +3,18 @@ Jenkins plugin and CLI to export CAST action items to Jira.
 
 Warning: The Extension described in this document is delivered as-is. This Extension is made available by CAST User Community and governed by Open Source License. Please consider all necessary steps to validate and to test the Extension in your environment before using it in production.
 
+## Jira Cloud (SAAS) Support
+
+**NEW:** This tool now supports both Jira Server/Data Center (on-prem) and Jira Cloud (SAAS).
+
+For Jira Cloud migration instructions, see: **[cli/JIRA_CLOUD_MIGRATION.md](cli/JIRA_CLOUD_MIGRATION.md)**
+
+**Quick Start for Jira Cloud:**
+- Use your **email address** as username (not username)
+- Use an **API token** as password (not your actual password)
+- Generate API tokens at: https://id.atlassian.com/manage-profile/security/api-tokens
+- Use URL format: `https://your-domain.atlassian.net`
+
 # Overview
 The CAST AIP Action Plan to Jira Jenkins plugin is designed to allow the user to export the contents of the Engineering Dashboard (ED) Action Plan to Jira as a bug.  The export will contain the following information:  
 1.	Business Criteria
@@ -23,10 +35,10 @@ This document provides installation, deployment and usage instructions for the C
 
 ## Release History 
 ### CLI and Jenkins Plugin (combined) - Global rewrite
-| Version          | Author          | Description                                                                                                                                                                                                 |
-|------------------|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 2.0.1 (Jun 2026) | Matthieu Mabyre | Security maintenance release: fixed CVEs by upgrading vulnerable dependencies (Jackson, PostgreSQL, Commons BeanUtils, Commons Lang3) and enhanced Jenkins plugin validation to improve configuration checks and reliability. |
-| 2.0.0 (May 2025) | Matthieu Mabyre | Rewrite with update of all major libraries (json to Jackson, httpclient, jira-rest-client, ...), refactored, improved and fixed all code issues, added distribution module and the related final packaging. |
+| Version          | Author                         | Description                                                                                                                                                                                                                                            |
+|------------------|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 2.0.1 (Jul 2026) | Matthieu Mabyre, Manish Sharma | Security maintenance: fixed CVEs by upgrading vulnerable dependencies (Jackson, PostgreSQL, Commons BeanUtils, Commons Lang3) and enhanced Jenkins plugin validation to improve configuration checks and reliability. Jira Cloud (SAAS) support added. |
+| 2.0.0 (May 2025) | Matthieu Mabyre                | Rewrite with update of all major libraries (json to Jackson, httpclient, jira-rest-client, ...), refactored, improved and fixed all code issues, added distribution module and the related final packaging.                                            |
 
 ### Legacy versions (deprecated)
 

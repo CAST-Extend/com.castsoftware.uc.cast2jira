@@ -156,6 +156,7 @@ public class Constants {
 	 * Constants used to map the Jira Field Labels. 
 	 * */
 	public static final String FIELD_MAPPING_LABEL_OBJECT_FULL_NAME = "ObjectFullName.label";
+	public static final String FIELD_MAPPING_LABEL_OBJECT_NAME = "ObjectName.label";
 	public static final String FIELD_MAPPING_LABEL_ADDED_TO_ACTION_PLAN_DATE = "AddedToActionPlanDate.label";
 	public static final String FIELD_MAPPING_LABEL_METRIC_SHORT_DESCRIPTION = "MetricShortDescription.label";
 	public static final String FIELD_MAPPING_LABEL_METRIC_LONG_DESCRIPTION = "MetricLongDescription.label";
@@ -169,6 +170,7 @@ public class Constants {
 	public static final String FIELD_MAPPING_LABEL_OUTPUT_DESCRIPTION = "Output.label";
 	public static final String FIELD_MAPPING_LABEL_CASTID_DESCRIPTION = "CastId.label";
 	public static final String FIELD_MAPPING_LABEL_SOURCE_CODE = "SourceCode.label";
+	public static final String FIELD_MAPPING_LABEL_SOURCE_PATH = "SourcePath.label";
 	public static final String FIELD_MAPPING_LABEL_LINE_START = "LineStart.label";
 	public static final String FIELD_MAPPING_LABEL_LINE_END = "LineEnd.label";
 	public static final String FIELD_MAPPING_LABEL_TECH_CRITERIA = "TechCriteria.label";
@@ -211,7 +213,7 @@ public class Constants {
 	public static final String FIELD_MAPPING_SUMMARY_JIRA_ORDER_DEFAULT_VALUE = "MetricShortDescription.label";
 
 	/** The Constant FIELD_MAPPING_DESCRIPTION_JIRA_ORDER_DEFAULT_VALUE. */
-	public static final String FIELD_MAPPING_DESCRIPTION_JIRA_ORDER_DEFAULT_VALUE = "SourceCode.label;ObjectFullName.label;AddedToActionPlanDate.label;ActionDefined.label;MetricLongDescription.label;Reason.label;Reference.label;Remediation.label;ViolationExample.label;RemediationExample.label;Total.label";
+	public static final String FIELD_MAPPING_DESCRIPTION_JIRA_ORDER_DEFAULT_VALUE = "Output.label;Total.label;SourceCode.label;ObjectFullName.label;AddedToActionPlanDate.label;ActionDefined.label;MetricLongDescription.label;Reason.label;Reference.label;Remediation.label;ViolationExample.label;RemediationExample.label";
 
 	/** The Constant FIELD_VALUE_WHEN_IS_NULL. */
 	public static final String FIELD_VALUE_WHEN_IS_NULL = "N/A";

@@ -33,6 +33,9 @@ public class ActionPlanViolation {
   /** The objectFullName. */
   private String objectFullName;
 
+  /** The objectName (short name). */
+  private String objectName;
+
   /** The metricShortDescription. */
   private String metricShortDescription;
 
@@ -101,7 +104,7 @@ public class ActionPlanViolation {
    *          the totals
    */
   public ActionPlanViolation(long object_id, String tag, int priority, String actionDate, String firstSnapshotDate, String actionDef,
-      String objectFullName, int metricId, String metricShortDescription, String reason, String metricLongDescription,
+      String objectFullName, String objectName, int metricId, String metricShortDescription, String reason, String metricLongDescription,
       String remediation, String reference, String violationExample, String remediationExample, String output,
       String totals, String sourcePath, int lineStart, int lineEnd, String sourceCode, String techCriteria,
       String businessCriteria, int violationStatus)
@@ -130,6 +133,7 @@ public class ActionPlanViolation {
     setActionDate(actionDate);
     setActionDef(actionDef);
     setObjectFullName(objectFullName);
+    setObjectName(objectName);
     setMetricId(metricId);
     setMetricShortDescription(metricShortDescription);
     setReason(reason);
@@ -157,10 +161,29 @@ public class ActionPlanViolation {
     int srcStartLine = this.getLineStart();
     int srcEndLine = this.getLineEnd();
     String crlf = System.getProperty("line.separator");
-    String src = getSourceCode();
+    String src = sourceCode;
+
+    if (src == null || src.isEmpty()) {
+      return "";
+    }
+
+    // Normalise line endings from DB (PostgreSQL stores \n, Windows expects \r\n)
+    src = src.replace("\r\n", "\n").replace("\r", "\n");
+
+    // If no valid line range, return full source
+    if (srcStartLine <= 0 || srcEndLine <= 0) {
+      return src;
+    }
 
     StringBuilder rslt = new StringBuilder().append("\n");
-    String[] lines = src.split(crlf);
+    String[] lines = src.split("\n");
+    srcStartLine = Math.max(srcStartLine, 1);
+    srcEndLine = Math.min(srcEndLine, lines.length);
+
+    if (srcStartLine > srcEndLine) {
+      return src;
+    }
+
     int cLine = 0;
     for (String ln : lines)
     {
@@ -231,6 +254,21 @@ public class ActionPlanViolation {
   {
     if (objectFullName != null)
       this.objectFullName = objectFullName.replaceAll("[\"]", "");
+  }
+
+  public String getObjectName()
+  {
+    if (objectName == null)
+    {
+      objectName = Constants.FIELD_VALUE_WHEN_IS_NULL;
+    }
+    return objectName;
+  }
+
+  public void setObjectName(String objectName)
+  {
+    if (objectName != null)
+      this.objectName = objectName.replaceAll("[\"]", "");
   }
 
   public long getObjectId()
@@ -575,6 +613,10 @@ public class ActionPlanViolation {
 
   public String getSourceCode()
   {
+    if (sourceCode == null) {
+      return "";
+    }
+
     int maxChar = 28672;
     int maxLength = Math.min(sourceCode.length(), maxChar);
     return sourceCode.substring(0, maxLength) + (maxLength == maxChar ? "..." : "");
