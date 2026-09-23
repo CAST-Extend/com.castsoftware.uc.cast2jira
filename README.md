@@ -37,7 +37,7 @@ This document provides installation, deployment and usage instructions for the C
 ### CLI and Jenkins Plugin (combined) - Global rewrite
 | Version          | Author                         | Description                                                                                                                                                                                                                                            |
 |------------------|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 2.0.1 (Jul 2026) | Matthieu Mabyre, Manish Sharma | Security maintenance: fixed CVEs by upgrading vulnerable dependencies (Jackson, PostgreSQL, Commons BeanUtils, Commons Lang3) and enhanced Jenkins plugin validation to improve configuration checks and reliability. Jira Cloud (SAAS) support added. |
+| 2.1.0 (Jul 2026) | Matthieu Mabyre, Manish Sharma | Security maintenance: fixed CVEs by upgrading vulnerable dependencies (Jackson, PostgreSQL, Commons BeanUtils, Commons Lang3) and enhanced Jenkins plugin validation to improve configuration checks and reliability. Jira Cloud (SAAS) support added. |
 | 2.0.0 (May 2025) | Matthieu Mabyre                | Rewrite with update of all major libraries (json to Jackson, httpclient, jira-rest-client, ...), refactored, improved and fixed all code issues, added distribution module and the related final packaging.                                            |
 
 ### Legacy versions (deprecated)
